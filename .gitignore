@@ -1,0 +1,38 @@
+# Unreal Engine
+Binaries/
+DerivedDataCache/
+Intermediate/
+Saved/
+Build/
+*.pdb
+
+# Visual Studio
+.vs/
+*.sln
+*.suo
+*.opensdf
+*.user
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.sdf
+*.db
+*.db-wal
+*.db-shm
+
+# Rider / JetBrains
+.idea/
+*.sln.DotSettings.user
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# Logs & Temp
+*.log
+*.tmp
+
+# IDE
+.vscode/
