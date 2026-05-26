@@ -86,6 +86,8 @@ void AMyCharacter::BeginPlay()
 	Super::BeginPlay();
 	MyGameState = Cast<AMyGameStateBase>(GetWorld()->GetGameState());
 
+	Tags.Add(FName("Player"));
+
 	if (HasAuthority())
 	{
 		GiveWeapon();
