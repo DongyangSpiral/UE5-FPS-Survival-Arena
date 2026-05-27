@@ -18,10 +18,10 @@ public:
 	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
 	UPROPERTY(EditAnywhere, Category = "AI")
-	float AttackRange = 2000.0f;
+	float AttackRange = 600.0f;
 
 	UPROPERTY(EditAnywhere, Category = "AI")
-	float ChaseInterval = 0.5f;
+	float ChaseInterval = 0.3f;
 
 protected:
 	void ChaseTick();

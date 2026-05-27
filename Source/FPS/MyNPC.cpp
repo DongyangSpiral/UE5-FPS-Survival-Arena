@@ -14,6 +14,8 @@ AMyNPC::AMyNPC()
 {
 	PrimaryActorTick.bCanEverTick = false;
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
+	bUseControllerRotationYaw = true;
+	GetCharacterMovement()->bOrientRotationToMovement = false;
 }
 
 void AMyNPC::BeginPlay()
@@ -76,14 +78,14 @@ void AMyNPC::ChaseTick()
 
 	if (Players.Num() == 0)
 	{
-		UE_LOG(LogFPS, Warning, TEXT("AMyNPC::ChaseTick - No actors with 'Player' tag found!"));
+		if (AAIController* AIC = Cast<AAIController>(GetController()))
+			AIC->ClearFocus(EAIFocusPriority::Gameplay);
 		SafeStopShooting();
 		return;
 	}
 
 	AActor* NearestPlayer = nullptr;
 	float NearestDist = FLT_MAX;
-
 	for (AActor* Player : Players)
 	{
 		float Dist = FVector::Dist2D(GetActorLocation(), Player->GetActorLocation());
@@ -94,32 +96,30 @@ void AMyNPC::ChaseTick()
 		}
 	}
 
-	if (NearestPlayer)
+	if (!NearestPlayer)
 	{
-		AAIController* AIC = Cast<AAIController>(GetController());
-		if (AIC)
-		{
-			if (NearestDist > AttackRange)
-			{
-				UE_LOG(LogFPS, Verbose, TEXT("ChaseTick - Chasing player dist=%.0f > range=%.0f"), NearestDist, AttackRange);
-				AIC->MoveToActor(NearestPlayer, AttackRange * 0.5f, true, true, false, 0, true);
-				SafeStopShooting();
-			}
-			else
-			{
-				UE_LOG(LogFPS, Verbose, TEXT("ChaseTick - Attacking player dist=%.0f <= range=%.0f"), NearestDist, AttackRange);
-				AIC->MoveToActor(NearestPlayer, AttackRange * 0.3f, true, true, false, 0, true);
-				SafeStartShooting(NearestPlayer);
-			}
-		}
-		else
-		{
-			UE_LOG(LogFPS, Error, TEXT("AMyNPC::ChaseTick - Controller is NULL! NPC cannot move."));
-		}
+		SafeStopShooting();
+		return;
+	}
+
+	AAIController* AIC = Cast<AAIController>(GetController());
+	if (!AIC)
+	{
+		UE_LOG(LogFPS, Error, TEXT("AMyNPC::ChaseTick - Controller is NULL!"));
+		return;
+	}
+
+	AIC->SetFocus(NearestPlayer, EAIFocusPriority::Gameplay);
+
+	if (NearestDist > AttackRange)
+	{
+		AIC->MoveToActor(NearestPlayer, AttackRange * 0.5f, true, true, false, 0, true);
+		SafeStopShooting();
 	}
 	else
 	{
-		SafeStopShooting();
+		AIC->StopMovement();
+		SafeStartShooting(NearestPlayer);
 	}
 }
 
