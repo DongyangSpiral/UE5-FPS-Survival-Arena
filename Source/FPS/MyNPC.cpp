@@ -22,15 +22,17 @@ void AMyNPC::BeginPlay()
 {
 	Super::BeginPlay();
 
+	if (Weapon)
+	{
+		Weapon->GetFirstPersonMesh()->SetAnimInstanceClass(nullptr);
+		Weapon->GetThirdPersonMesh()->SetAnimInstanceClass(nullptr);
+	}
+
 	if (HasAuthority())
 	{
 		if (!Weapon)
 		{
 			UE_LOG(LogFPS, Error, TEXT("AMyNPC::BeginPlay - Weapon is NULL after Super::BeginPlay! Check WeaponClass in BP_SurvivalNPC."));
-		}
-		else
-		{
-			Weapon->GetFirstPersonMesh()->SetAnimInstanceClass(nullptr);
 		}
 
 		GetWorld()->GetTimerManager().SetTimerForNextTick(this, &AMyNPC::StopStateTree);
