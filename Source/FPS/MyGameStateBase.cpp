@@ -1,4 +1,5 @@
 #include "MyGameStateBase.h"
+#include "MyPlayerState.h"
 #include "Net/UnrealNetwork.h"
 
 AMyGameStateBase::AMyGameStateBase()
@@ -9,60 +10,21 @@ void AMyGameStateBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(AMyGameStateBase, TeamScore);
-	DOREPLIFETIME(AMyGameStateBase, AlivePlayerCount);
+	DOREPLIFETIME(AMyGameStateBase, WinnerName);
 	DOREPLIFETIME(AMyGameStateBase, bGameFinished);
 }
 
-void AMyGameStateBase::AddScore(int32 Amount)
+void AMyGameStateBase::OnPlayerVictory(AMyPlayerState* Winner)
 {
-	if (bGameFinished)
+	if (bGameFinished || !Winner)
 		return;
 
-	TeamScore += Amount;
-	OnTeamScoreChangedDelegate.Broadcast(TeamScore);
-
-	if (TeamScore >= TargetScore)
-	{
-		bGameFinished = true;
-		Multicast_ShowVictory();
-	}
+	bGameFinished = true;
+	WinnerName = Winner->GetPlayerName();
+	Multicast_ShowVictory(WinnerName);
 }
 
-void AMyGameStateBase::OnPlayerDied()
+void AMyGameStateBase::Multicast_ShowVictory_Implementation(const FString& Name)
 {
-	AlivePlayerCount = FMath::Max(0, AlivePlayerCount - 1);
-	OnAliveCountChangedDelegate.Broadcast(AlivePlayerCount);
-
-	if (AlivePlayerCount <= 0 && !bGameFinished)
-	{
-		bGameFinished = true;
-		Multicast_ShowGameOver();
-	}
-}
-
-void AMyGameStateBase::OnPlayerRespawned()
-{
-	AlivePlayerCount++;
-	OnAliveCountChangedDelegate.Broadcast(AlivePlayerCount);
-}
-
-void AMyGameStateBase::Multicast_ShowVictory_Implementation()
-{
-	BP_OnVictory();
-}
-
-void AMyGameStateBase::Multicast_ShowGameOver_Implementation()
-{
-	BP_OnGameOver();
-}
-
-void AMyGameStateBase::OnRep_TeamScore()
-{
-	OnTeamScoreChangedDelegate.Broadcast(TeamScore);
-}
-
-void AMyGameStateBase::OnRep_AlivePlayerCount()
-{
-	OnAliveCountChangedDelegate.Broadcast(AlivePlayerCount);
+	BP_OnVictory(Name);
 }

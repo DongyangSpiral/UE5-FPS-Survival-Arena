@@ -1,6 +1,8 @@
 #include "MyCharacter.h"
-#include "MyGameStateBase.h"
+#include "FPS.h"
+#include "MyPlayerState.h"
 #include "Variant_Shooter/Weapons/ShooterWeapon.h"
+#include "Variant_Shooter/Weapons/ShooterProjectile.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputMappingContext.h"
@@ -10,6 +12,7 @@
 #include "Animation/AnimInstance.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
+#include "GameFramework/GameModeBase.h"
 #include "Engine/World.h"
 #include "Engine/SkeletalMesh.h"
 #include "TimerManager.h"
@@ -84,7 +87,6 @@ AMyCharacter::AMyCharacter()
 void AMyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	MyGameState = Cast<AMyGameStateBase>(GetWorld()->GetGameState());
 
 	Tags.Add(FName("Player"));
 
@@ -103,6 +105,28 @@ void AMyCharacter::GiveWeapon()
 	if (WeaponToGive)
 	{
 		AddWeaponClass(WeaponToGive);
+	}
+
+	if (AMyPlayerState* PS = GetPlayerState<AMyPlayerState>())
+	{
+		UpdateBulletTier(PS->WeaponTier);
+	}
+}
+
+void AMyCharacter::UpdateBulletTier(int32 NewTier)
+{
+	if (!CurrentWeapon || NewTier < 0 || NewTier >= 4)
+		return;
+
+	if (!TierProjectileClasses[NewTier])
+		return;
+
+	FObjectProperty* Prop = FindFProperty<FObjectProperty>(AShooterWeapon::StaticClass(), TEXT("ProjectileClass"));
+	if (Prop)
+	{
+		void* Addr = Prop->ContainerPtrToValuePtr<UObject*>(CurrentWeapon);
+		Prop->SetObjectPropertyValue(Addr, TierProjectileClasses[NewTier].Get());
+		UE_LOG(LogFPS, Verbose, TEXT("AMyCharacter::UpdateBulletTier - Set ProjectileClass to tier %d"), NewTier);
 	}
 }
 
@@ -149,15 +173,27 @@ float AMyCharacter::TakeDamage(float Damage, FDamageEvent const& DamageEvent, AC
 	if (CurrentHP <= 0.0f)
 	{
 		if (CurrentWeapon)
+		{
 			CurrentWeapon->DeactivateWeapon();
+			CurrentWeapon->GetFirstPersonMesh()->SetAnimInstanceClass(nullptr);
+			CurrentWeapon->GetThirdPersonMesh()->SetAnimInstanceClass(nullptr);
+			CurrentWeapon->Destroy();
+		}
 
-		if (MyGameState)
-			MyGameState->OnPlayerDied();
+		OwnedWeapons.Empty();
+		CurrentWeapon = nullptr;
+
+		GetFirstPersonMesh()->SetAnimInstanceClass(nullptr);
+		GetMesh()->SetAnimInstanceClass(nullptr);
+
+		if (AMyPlayerState* PS = GetPlayerState<AMyPlayerState>())
+		{
+			PS->ResetScore();
+		}
 
 		Tags.Add(DeathTag);
 		GetCharacterMovement()->StopMovementImmediately();
 		DisableInput(Cast<APlayerController>(GetController()));
-		OnBulletCountUpdated.Broadcast(0, 0);
 		BP_OnDeath();
 		GetWorld()->GetTimerManager().SetTimer(RespawnTimer, this, &AMyCharacter::OnRespawn, RespawnTime, false);
 	}
@@ -167,14 +203,13 @@ float AMyCharacter::TakeDamage(float Damage, FDamageEvent const& DamageEvent, AC
 
 void AMyCharacter::OnRespawn()
 {
-	if (MyGameState)
-		MyGameState->OnPlayerRespawned();
-
-	if (AController* C = GetController())
+	if (APlayerController* PC = Cast<APlayerController>(GetController()))
 	{
+		SetActorHiddenInGame(true);
+		SetActorEnableCollision(false);
+		PC->UnPossess();
+		Destroy();
 		if (AGameModeBase* GM = GetWorld()->GetAuthGameMode())
-			GM->RestartPlayer(Cast<APlayerController>(C));
+			GM->RestartPlayer(PC);
 	}
-
-	Destroy();
 }

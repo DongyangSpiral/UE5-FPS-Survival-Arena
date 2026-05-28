@@ -1,6 +1,6 @@
 #include "MyNPC.h"
 #include "FPS.h"
-#include "MyGameStateBase.h"
+#include "MyPlayerState.h"
 #include "AIController.h"
 #include "Variant_Shooter/AI/ShooterAIController.h"
 #include "Components/StateTreeAIComponent.h"
@@ -27,6 +27,10 @@ void AMyNPC::BeginPlay()
 		if (!Weapon)
 		{
 			UE_LOG(LogFPS, Error, TEXT("AMyNPC::BeginPlay - Weapon is NULL after Super::BeginPlay! Check WeaponClass in BP_SurvivalNPC."));
+		}
+		else
+		{
+			Weapon->GetFirstPersonMesh()->SetAnimInstanceClass(nullptr);
 		}
 
 		GetWorld()->GetTimerManager().SetTimerForNextTick(this, &AMyNPC::StopStateTree);
@@ -132,9 +136,12 @@ float AMyNPC::TakeDamage(float Damage, FDamageEvent const& DamageEvent, AControl
 
 	if (CurrentHP <= 0.0f)
 	{
-		if (AMyGameStateBase* GS = Cast<AMyGameStateBase>(GetWorld()->GetGameState()))
+		if (EventInstigator)
 		{
-			GS->AddScore(1);
+			if (AMyPlayerState* PS = EventInstigator->GetPlayerState<AMyPlayerState>())
+			{
+				PS->AddScore(1);
+			}
 		}
 
 		bIsDead = true;

@@ -4,8 +4,8 @@
 #include "Variant_Shooter/ShooterCharacter.h"
 #include "MyCharacter.generated.h"
 
-class AMyGameStateBase;
 class AShooterWeapon;
+class AShooterProjectile;
 class UInputMappingContext;
 
 UCLASS()
@@ -24,6 +24,11 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
 	TSubclassOf<AShooterWeapon> DefaultWeaponClass;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Bullet Tiers")
+	TSubclassOf<AShooterProjectile> TierProjectileClasses[4];
+
+	void UpdateBulletTier(int32 NewTier);
+
 protected:
 	void OnRespawn();
 	void GiveWeapon();
@@ -36,6 +41,4 @@ protected:
 
 	UPROPERTY()
 	TObjectPtr<UInputMappingContext> WeaponIMC;
-
-	AMyGameStateBase* MyGameState;
 };
