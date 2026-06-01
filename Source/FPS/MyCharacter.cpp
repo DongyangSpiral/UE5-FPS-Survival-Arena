@@ -128,6 +128,8 @@ void AMyCharacter::UpdateBulletTier(int32 NewTier)
 		Prop->SetObjectPropertyValue(Addr, TierProjectileClasses[NewTier].Get());
 		UE_LOG(LogFPS, Verbose, TEXT("AMyCharacter::UpdateBulletTier - Set ProjectileClass to tier %d"), NewTier);
 	}
+
+	OnBulletTierChanged.Broadcast(NewTier);
 }
 
 void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -195,6 +197,9 @@ float AMyCharacter::TakeDamage(float Damage, FDamageEvent const& DamageEvent, AC
 		GetCharacterMovement()->StopMovementImmediately();
 		DisableInput(Cast<APlayerController>(GetController()));
 		BP_OnDeath();
+
+		OnMyCharacterDied.Broadcast(RespawnTime);
+
 		GetWorld()->GetTimerManager().SetTimer(RespawnTimer, this, &AMyCharacter::OnRespawn, RespawnTime, false);
 	}
 

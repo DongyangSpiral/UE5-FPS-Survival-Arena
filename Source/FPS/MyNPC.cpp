@@ -1,6 +1,7 @@
 #include "MyNPC.h"
 #include "FPS.h"
 #include "MyPlayerState.h"
+#include "MyGameStateBase.h"
 #include "AIController.h"
 #include "Variant_Shooter/AI/ShooterAIController.h"
 #include "Components/StateTreeAIComponent.h"
@@ -143,6 +144,11 @@ float AMyNPC::TakeDamage(float Damage, FDamageEvent const& DamageEvent, AControl
 			if (AMyPlayerState* PS = EventInstigator->GetPlayerState<AMyPlayerState>())
 			{
 				PS->AddScore(1);
+			}
+
+			if (AMyGameStateBase* GS = GetWorld()->GetGameState<AMyGameStateBase>())
+			{
+				GS->AddScore(1);
 			}
 		}
 

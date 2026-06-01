@@ -4,6 +4,8 @@
 #include "GameFramework/GameModeBase.h"
 #include "MyGameModeBase.generated.h"
 
+class UMyUIWidget;
+
 UCLASS()
 class FPS_API AMyGameModeBase : public AGameModeBase
 {
@@ -11,4 +13,11 @@ class FPS_API AMyGameModeBase : public AGameModeBase
 
 public:
 	AMyGameModeBase();
+
+	virtual void BeginPlay() override;
+	virtual void PostLogin(APlayerController* NewPlayer) override;
+	virtual void Logout(AController* Exiting) override;
+
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UMyUIWidget> MyUIClass;
 };
