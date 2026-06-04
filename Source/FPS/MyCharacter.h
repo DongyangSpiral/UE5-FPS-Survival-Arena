@@ -7,6 +7,7 @@
 class AShooterWeapon;
 class AShooterProjectile;
 class UInputMappingContext;
+class UMyUIWidget;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMyCharacterDiedDelegate, float, RespawnTime);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMyBulletTierChangedDelegate, int32, NewTier);
@@ -37,6 +38,12 @@ public:
 
 	UFUNCTION(BlueprintPure)
 	float GetLifePercent() const { return MaxHP > 0.0f ? FMath::Clamp(CurrentHP / MaxHP, 0.0f, 1.0f) : 0.0f; }
+
+	UFUNCTION(BlueprintPure)
+	float GetRespawnTime() const { return RespawnTime; }
+
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UMyUIWidget> MyWidgetClass;
 
 	UPROPERTY(BlueprintAssignable)
 	FMyCharacterDiedDelegate OnMyCharacterDied;

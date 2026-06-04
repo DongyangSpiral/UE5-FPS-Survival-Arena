@@ -1,12 +1,14 @@
 #include "MyCharacter.h"
 #include "FPS.h"
 #include "MyPlayerState.h"
+#include "MyUIWidget.h"
 #include "Variant_Shooter/Weapons/ShooterWeapon.h"
 #include "Variant_Shooter/Weapons/ShooterProjectile.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputMappingContext.h"
 #include "Engine/LocalPlayer.h"
+#include "Blueprint/UserWidget.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Animation/AnimInstance.h"
@@ -136,19 +138,33 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	if (!PC)
+		return;
+
+	if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
 	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
+		if (DefaultIMC)
 		{
-			if (DefaultIMC)
+			Subsystem->RemoveMappingContext(DefaultIMC);
+			Subsystem->AddMappingContext(DefaultIMC, 0);
+		}
+		if (WeaponIMC)
+		{
+			Subsystem->RemoveMappingContext(WeaponIMC);
+			Subsystem->AddMappingContext(WeaponIMC, 0);
+		}
+	}
+
+	if (IsLocallyControlled() && MyWidgetClass)
+	{
+		if (AMyPlayerState* PS = GetPlayerState<AMyPlayerState>())
+		{
+			if (!PS->MyUIWidget)
 			{
-				Subsystem->RemoveMappingContext(DefaultIMC);
-				Subsystem->AddMappingContext(DefaultIMC, 0);
-			}
-			if (WeaponIMC)
-			{
-				Subsystem->RemoveMappingContext(WeaponIMC);
-				Subsystem->AddMappingContext(WeaponIMC, 0);
+				PS->MyUIWidget = CreateWidget<UMyUIWidget>(PC, MyWidgetClass);
+				if (PS->MyUIWidget)
+					PS->MyUIWidget->AddToPlayerScreen(0);
 			}
 		}
 	}
@@ -210,9 +226,6 @@ void AMyCharacter::OnRespawn()
 {
 	if (APlayerController* PC = Cast<APlayerController>(GetController()))
 	{
-		SetActorHiddenInGame(true);
-		SetActorEnableCollision(false);
-		PC->UnPossess();
 		Destroy();
 		if (AGameModeBase* GM = GetWorld()->GetAuthGameMode())
 			GM->RestartPlayer(PC);

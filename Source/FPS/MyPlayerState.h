@@ -4,6 +4,8 @@
 #include "GameFramework/PlayerState.h"
 #include "MyPlayerState.generated.h"
 
+class UMyUIWidget;
+
 UCLASS()
 class FPS_API AMyPlayerState : public APlayerState
 {
@@ -16,6 +18,9 @@ public:
 
 	UPROPERTY(ReplicatedUsing = OnRep_WeaponTier, BlueprintReadOnly)
 	int32 WeaponTier = 0;
+
+	UPROPERTY()
+	TObjectPtr<UMyUIWidget> MyUIWidget;
 
 	void AddScore(int32 Amount);
 	void ResetScore();
