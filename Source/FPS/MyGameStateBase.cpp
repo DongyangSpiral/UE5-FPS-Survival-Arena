@@ -1,6 +1,10 @@
 #include "MyGameStateBase.h"
 #include "MyPlayerState.h"
 #include "Net/UnrealNetwork.h"
+#include "Kismet/GameplayStatics.h"
+#include "AIController.h"
+#include "GameFramework/PlayerController.h"
+#include "GameFramework/Pawn.h"
 
 AMyGameStateBase::AMyGameStateBase()
 {
@@ -43,6 +47,8 @@ void AMyGameStateBase::AddScore(int32 Amount)
 		}
 
 		WinnerName = BestPlayer ? BestPlayer->GetPlayerName() : TEXT("Team");
+
+		FreezeAllActors();
 		Multicast_ShowVictory(WinnerName);
 	}
 }
@@ -59,6 +65,8 @@ void AMyGameStateBase::OnPlayerDied()
 	{
 		bGameFinished = true;
 		WinnerName.Empty();
+
+		FreezeAllActors();
 		Multicast_ShowDefeat();
 	}
 }
@@ -82,6 +90,36 @@ void AMyGameStateBase::OnPlayerVictory(AMyPlayerState* Winner)
 	TeamScore = TargetScore;
 	OnRep_TeamScore();
 	Multicast_ShowVictory(WinnerName);
+}
+
+void AMyGameStateBase::FreezeAllActors()
+{
+	if (!HasAuthority())
+		return;
+
+	for (auto It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (APlayerController* PC = Cast<APlayerController>(It->Get()))
+		{
+			PC->SetPause(true);
+		}
+	}
+
+	TArray<AActor*> AllPawns;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), APawn::StaticClass(), AllPawns);
+	for (AActor* Pawn : AllPawns)
+	{
+		if (APawn* P = Cast<APawn>(Pawn))
+		{
+			if (P->GetController() && P->GetController()->IsA<AAIController>())
+			{
+				if (AAIController* AIC = Cast<AAIController>(P->GetController()))
+				{
+					AIC->StopMovement();
+				}
+			}
+		}
+	}
 }
 
 void AMyGameStateBase::OnRep_TeamScore()

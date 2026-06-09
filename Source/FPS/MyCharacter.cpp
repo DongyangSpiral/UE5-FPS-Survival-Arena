@@ -239,6 +239,11 @@ void AMyCharacter::OnRespawn()
 {
 	if (APlayerController* PC = Cast<APlayerController>(GetController()))
 	{
+		if (AMyGameStateBase* GS = GetWorld()->GetGameState<AMyGameStateBase>())
+		{
+			if (GS->bGameFinished)
+				return;
+		}
 		Destroy();
 		if (AGameModeBase* GM = GetWorld()->GetAuthGameMode())
 			GM->RestartPlayer(PC);

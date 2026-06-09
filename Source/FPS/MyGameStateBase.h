@@ -35,6 +35,7 @@ public:
 	void OnPlayerDied();
 	void OnPlayerRespawned();
 	void OnPlayerVictory(AMyPlayerState* Winner);
+	void FreezeAllActors();
 
 	UFUNCTION()
 	void OnRep_TeamScore();

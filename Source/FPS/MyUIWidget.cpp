@@ -26,24 +26,7 @@ void UMyUIWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 		UnbindFromPawn();
 	}
 
-	// Detect death via IsDead()
-	if (AMyCharacter* MyChar = Cast<AMyCharacter>(CurrentPawn))
-	{
-		if (MyChar->IsDead() && DeathCountdown < 0.0f)
-		{
-			DeathCountdown = MyChar->GetRespawnTime();
-			BP_ShowDeathOverlay(DeathCountdown);
-		}
-	}
-
-	// Tick death countdown
-	if (DeathCountdown > 0.0f)
-	{
-		DeathCountdown -= InDeltaTime;
-		BP_ShowDeathOverlay(FMath::Max(0.0f, DeathCountdown));
-	}
-
-	// Poll GameState
+	// Step 1: Poll GameState FIRST (victory/defeat takes priority)
 	if (AMyGameStateBase* GS = GetWorld()->GetGameState<AMyGameStateBase>())
 	{
 		BP_UpdateScore(GS->TeamScore, GS->TargetScore);
@@ -52,6 +35,8 @@ void UMyUIWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 		if (GS->bGameFinished && !bGameFinishedHandled)
 		{
 			bGameFinishedHandled = true;
+			DeathCountdown = -1.0f;
+			BP_HideDeathOverlay();
 			if (GS->WinnerName.IsEmpty())
 				BP_ShowDefeat();
 			else
@@ -59,7 +44,32 @@ void UMyUIWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 		}
 	}
 
-	// Poll bullet tier from PlayerState
+	// Step 2: Death detection
+	if (AMyCharacter* MyChar = Cast<AMyCharacter>(CurrentPawn))
+	{
+		if (MyChar->IsDead() && DeathCountdown < 0.0f)
+		{
+			AMyGameStateBase* GS = GetWorld()->GetGameState<AMyGameStateBase>();
+			if (!GS || !GS->bGameFinished)
+			{
+				DeathCountdown = MyChar->GetRespawnTime();
+				BP_ShowDeathOverlay(DeathCountdown);
+			}
+		}
+	}
+
+	// Step 3: Tick death countdown
+	if (DeathCountdown > 0.0f)
+	{
+		DeathCountdown -= InDeltaTime;
+		AMyGameStateBase* GS = GetWorld()->GetGameState<AMyGameStateBase>();
+		if (!GS || !GS->bGameFinished)
+		{
+			BP_ShowDeathOverlay(FMath::Max(0.0f, DeathCountdown));
+		}
+	}
+
+	// Step 4: Poll bullet tier from PlayerState
 	if (APlayerController* PC = GetOwningPlayer())
 	{
 		if (AMyPlayerState* PS = PC->GetPlayerState<AMyPlayerState>())
