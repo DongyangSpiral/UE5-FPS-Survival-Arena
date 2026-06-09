@@ -67,6 +67,14 @@ void UMyUIWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 			BP_UpdateBulletTier(PS->WeaponTier);
 		}
 	}
+
+	// Refresh leaderboard every 0.3s (avoid sorting every frame)
+	LeaderboardRefreshTimer -= InDeltaTime;
+	if (LeaderboardRefreshTimer <= 0.0f)
+	{
+		UpdateLeaderboard();
+		LeaderboardRefreshTimer = 0.3f;
+	}
 }
 
 void UMyUIWidget::BindToPawn(AShooterCharacter* NewPawn)
@@ -133,4 +141,44 @@ void UMyUIWidget::OnBulletTierChanged(int32 NewTier)
 {
 	BP_UpdateBulletTier(NewTier);
 	BP_ShowTierUp(NewTier);
+}
+
+void UMyUIWidget::UpdateLeaderboard()
+{
+	UWorld* World = GetWorld();
+	if (!World)
+		return;
+
+	APlayerController* LocalPC = GetOwningPlayer();
+	if (!LocalPC)
+		return;
+
+	AGameStateBase* GS = World->GetGameState();
+	if (!GS)
+		return;
+
+	TArray<FLeaderboardEntry> Entries;
+
+	for (APlayerState* PS : GS->PlayerArray)
+	{
+		if (!PS)
+			continue;
+
+		FLeaderboardEntry Entry;
+		Entry.PlayerName = PS->GetPlayerName();
+		Entry.Score = FMath::RoundToInt(PS->GetScore());
+		Entry.bIsLocalPlayer = (PS == LocalPC->PlayerState);
+		Entries.Add(Entry);
+	}
+
+	// Sort descending by Score
+	Entries.Sort([](const FLeaderboardEntry& A, const FLeaderboardEntry& B)
+	{
+		return A.Score > B.Score;
+	});
+
+	AMyGameStateBase* MGS = Cast<AMyGameStateBase>(GS);
+	int32 Target = MGS ? MGS->TargetScore : 10;
+
+	BP_UpdateLeaderboard(Entries, Target);
 }

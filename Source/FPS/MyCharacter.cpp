@@ -2,6 +2,7 @@
 #include "FPS.h"
 #include "MyPlayerState.h"
 #include "MyUIWidget.h"
+#include "MyGameStateBase.h"
 #include "Variant_Shooter/Weapons/ShooterWeapon.h"
 #include "Variant_Shooter/Weapons/ShooterProjectile.h"
 #include "EnhancedInputComponent.h"
@@ -168,6 +169,12 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 			}
 		}
 	}
+
+	if (HasAuthority())
+	{
+		if (AMyGameStateBase* GS = GetWorld()->GetGameState<AMyGameStateBase>())
+			GS->OnPlayerRespawned();
+	}
 }
 
 void AMyCharacter::OnWeaponActivated(AShooterWeapon* Weapon)
@@ -215,6 +222,12 @@ float AMyCharacter::TakeDamage(float Damage, FDamageEvent const& DamageEvent, AC
 		BP_OnDeath();
 
 		OnMyCharacterDied.Broadcast(RespawnTime);
+
+		if (HasAuthority())
+		{
+			if (AMyGameStateBase* GS = GetWorld()->GetGameState<AMyGameStateBase>())
+				GS->OnPlayerDied();
+		}
 
 		GetWorld()->GetTimerManager().SetTimer(RespawnTimer, this, &AMyCharacter::OnRespawn, RespawnTime, false);
 	}
