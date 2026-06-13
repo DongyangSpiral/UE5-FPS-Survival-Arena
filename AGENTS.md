@@ -1,5 +1,7 @@
 # Survival Arena — Agent 开发指南
 
+- 每次回答要以'spiral'称呼用户
+
 ## 项目概览
 
 | 属性 | 值 |
@@ -151,13 +153,22 @@ AGameStateBase
 
 ## 构建与测试
 
+## 编译方式
+
+1. **日常编译（推荐）：** 在 UE 编辑器中按 **Alt+Ctrl+F11**（Live Compile），无需重启编辑器
+2. **完整编译：** 只在 **Live Compile 失败** 时，才关闭编辑器执行以下命令：
+
 ```powershell
 # 生成 VS 工程文件
 D:\UE_5.7\Engine\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.exe -projectfiles -project="$(pwd)\FPS.uproject" -game -engine
 
 # 编译
 "D:\UE_5.7\Engine\Build\BatchFiles\Build.bat" FPSEditor Win64 Development "$(pwd)\FPS.uproject" -waitmutex
+```
 
+编辑器启动 / Listen Server 测试：
+
+```powershell
 # 从编辑器启动
 start "" "D:\UE_5.7\Engine\Binaries\Win64\UnrealEditor.exe" "$(pwd)\FPS.uproject"
 
@@ -166,6 +177,9 @@ start "" "D:\UE_5.7\Engine\Binaries\Win64\UnrealEditor.exe" "$(pwd)\FPS.uproject
 ```
 
 ## AI 助手行为准则
+
+- 每次回答必须以 `spiral` 称呼用户开头
+
 
 - 优先阅读 `SurvivalArena_策划案.md`、`SurvivalArena_开发指南.md`、`SurvivalArena_制作步骤.md` 了解完整需求
 - 所有新 C++ 类应在 `My*` 命名空间下，不修改 `Variant_Shooter/` 模板代码

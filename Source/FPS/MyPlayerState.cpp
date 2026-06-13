@@ -23,12 +23,10 @@ void AMyPlayerState::AddScore(int32 Amount)
 		WeaponTier = GetTierForScore(FMath::RoundToInt(NewScore));
 		OnRep_WeaponTier();
 
-		if (NewScore >= 10.0f)
+		if (AMyGameStateBase* GS = GetWorld()->GetGameState<AMyGameStateBase>())
 		{
-			if (AMyGameStateBase* GS = GetWorld()->GetGameState<AMyGameStateBase>())
-			{
+			if (NewScore >= GS->TargetScore)
 				GS->OnPlayerVictory(this);
-			}
 		}
 	}
 }

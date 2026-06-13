@@ -69,28 +69,24 @@ void AMyNetworkedCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
 
 void AMyNetworkedCharacter::Input_StartFiring()
 {
-	if (HasAuthority())
-	{
-		if (CurrentWeapon && !IsDead())
-			CurrentWeapon->StartFiring();
-	}
-	else
-	{
+	if (!CurrentWeapon || IsDead())
+		return;
+
+	CurrentWeapon->StartFiring();
+
+	if (!HasAuthority())
 		Server_StartFiring();
-	}
 }
 
 void AMyNetworkedCharacter::Input_StopFiring()
 {
-	if (HasAuthority())
-	{
-		if (CurrentWeapon && !IsDead())
-			CurrentWeapon->StopFiring();
-	}
-	else
-	{
+	if (!CurrentWeapon || IsDead())
+		return;
+
+	CurrentWeapon->StopFiring();
+
+	if (!HasAuthority())
 		Server_StopFiring();
-	}
 }
 
 void AMyNetworkedCharacter::Input_SwitchWeapon()

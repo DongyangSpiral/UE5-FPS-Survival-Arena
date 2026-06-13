@@ -34,9 +34,6 @@ void AMyGameModeBase::PostLogin(APlayerController* NewPlayer)
 void AMyGameModeBase::RestartPlayer(AController* NewPlayer)
 {
 	Super::RestartPlayer(NewPlayer);
-
-	if (AMyGameStateBase* GS = GetGameState<AMyGameStateBase>())
-		GS->OnPlayerRespawned();
 }
 
 void AMyGameModeBase::Logout(AController* Exiting)
@@ -45,6 +42,10 @@ void AMyGameModeBase::Logout(AController* Exiting)
 
 	if (HasAuthority())
 	{
+		APawn* ExitingPawn = Exiting->GetPawn();
+		if (ExitingPawn && ExitingPawn->ActorHasTag(FName("Dead")))
+			return;
+
 		if (AMyGameStateBase* GS = GetGameState<AMyGameStateBase>())
 			GS->OnPlayerDied();
 	}
