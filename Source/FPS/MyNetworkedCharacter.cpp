@@ -21,10 +21,16 @@ void AMyNetworkedCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (HasAuthority() && CurrentWeapon)
+	if (HasAuthority())
 	{
-		CurrentWeapon->SetReplicates(true);
-		ReplicatedWeapon = CurrentWeapon;
+		if (CurrentWeapon)
+		{
+			CurrentWeapon->SetReplicates(true);
+			ReplicatedWeapon = CurrentWeapon;
+		}
+
+		if (AMyGameStateBase* GS = GetWorld()->GetGameState<AMyGameStateBase>())
+			GS->OnPlayerRespawned();
 	}
 }
 
@@ -62,11 +68,6 @@ void AMyNetworkedCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
 		}
 	}
 
-	if (HasAuthority())
-	{
-		if (AMyGameStateBase* GS = GetWorld()->GetGameState<AMyGameStateBase>())
-			GS->OnPlayerRespawned();
-	}
 }
 
 void AMyNetworkedCharacter::Input_StartFiring()
