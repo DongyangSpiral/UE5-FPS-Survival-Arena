@@ -23,6 +23,12 @@ protected:
 	UPROPERTY(ReplicatedUsing = OnRep_bIsDead)
 	bool ReplicatedbIsDead = false;
 
+	UPROPERTY(ReplicatedUsing = OnRep_ReplicatedWeapon)
+	TObjectPtr<AShooterWeapon> ReplicatedWeapon;
+
+	UFUNCTION()
+	void OnRep_ReplicatedWeapon();
+
 	UFUNCTION()
 	void OnRep_CurrentHP();
 

@@ -23,8 +23,14 @@ void AMyNetworkedNPC::BeginPlay()
 
 	WeaponClass = SavedWeaponClass;
 
-	if (HasAuthority() && Weapon)
-		Weapon->SetReplicates(true);
+	if (HasAuthority())
+	{
+		if (Weapon)
+		{
+			Weapon->SetReplicates(true);
+			ReplicatedWeapon = Weapon;
+		}
+	}
 }
 
 float AMyNetworkedNPC::TakeDamage(float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
@@ -64,10 +70,17 @@ void AMyNetworkedNPC::OnRep_bIsDead()
 	}
 }
 
+void AMyNetworkedNPC::OnRep_ReplicatedWeapon()
+{
+	if (ReplicatedWeapon && !HasAuthority())
+		Weapon = ReplicatedWeapon;
+}
+
 void AMyNetworkedNPC::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AMyNetworkedNPC, ReplicatedCurrentHP);
 	DOREPLIFETIME(AMyNetworkedNPC, ReplicatedbIsDead);
+	DOREPLIFETIME(AMyNetworkedNPC, ReplicatedWeapon);
 }

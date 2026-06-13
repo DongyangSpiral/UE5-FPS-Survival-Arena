@@ -28,9 +28,6 @@ void AMyNetworkedCharacter::BeginPlay()
 			CurrentWeapon->SetReplicates(true);
 			ReplicatedWeapon = CurrentWeapon;
 		}
-
-		if (AMyGameStateBase* GS = GetWorld()->GetGameState<AMyGameStateBase>())
-			GS->OnPlayerRespawned();
 	}
 }
 
@@ -72,12 +69,10 @@ void AMyNetworkedCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
 
 void AMyNetworkedCharacter::Input_StartFiring()
 {
-	if (!CurrentWeapon || IsDead())
-		return;
-
 	if (HasAuthority())
 	{
-		CurrentWeapon->StartFiring();
+		if (CurrentWeapon && !IsDead())
+			CurrentWeapon->StartFiring();
 	}
 	else
 	{
@@ -87,12 +82,10 @@ void AMyNetworkedCharacter::Input_StartFiring()
 
 void AMyNetworkedCharacter::Input_StopFiring()
 {
-	if (!CurrentWeapon || IsDead())
-		return;
-
 	if (HasAuthority())
 	{
-		CurrentWeapon->StopFiring();
+		if (CurrentWeapon && !IsDead())
+			CurrentWeapon->StopFiring();
 	}
 	else
 	{

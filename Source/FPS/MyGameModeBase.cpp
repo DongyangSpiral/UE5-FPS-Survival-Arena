@@ -31,6 +31,14 @@ void AMyGameModeBase::PostLogin(APlayerController* NewPlayer)
 	Super::PostLogin(NewPlayer);
 }
 
+void AMyGameModeBase::RestartPlayer(AController* NewPlayer)
+{
+	Super::RestartPlayer(NewPlayer);
+
+	if (AMyGameStateBase* GS = GetGameState<AMyGameStateBase>())
+		GS->OnPlayerRespawned();
+}
+
 void AMyGameModeBase::Logout(AController* Exiting)
 {
 	Super::Logout(Exiting);
