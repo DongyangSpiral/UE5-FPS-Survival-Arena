@@ -19,6 +19,9 @@ public:
 	UPROPERTY(ReplicatedUsing = OnRep_WeaponTier, BlueprintReadOnly)
 	int32 WeaponTier = 0;
 
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Game")
+	bool bPendingRespawn = false;
+
 	UPROPERTY()
 	TObjectPtr<UMyUIWidget> MyUIWidget;
 

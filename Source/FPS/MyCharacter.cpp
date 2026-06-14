@@ -170,11 +170,6 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 		}
 	}
 
-	if (HasAuthority())
-	{
-		if (AMyGameStateBase* GS = GetWorld()->GetGameState<AMyGameStateBase>())
-			GS->OnPlayerRespawned();
-	}
 }
 
 void AMyCharacter::OnWeaponActivated(AShooterWeapon* Weapon)
@@ -214,6 +209,10 @@ float AMyCharacter::TakeDamage(float Damage, FDamageEvent const& DamageEvent, AC
 		if (AMyPlayerState* PS = GetPlayerState<AMyPlayerState>())
 		{
 			PS->ResetScore();
+			if (HasAuthority())
+			{
+				PS->bPendingRespawn = true;
+			}
 		}
 
 		Tags.Add(DeathTag);

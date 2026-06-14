@@ -34,6 +34,8 @@ protected:
 	UFUNCTION()
 	void OnRep_ReplicatedWeapon();
 
+	void ApplyReplicatedWeapon();
+
 public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

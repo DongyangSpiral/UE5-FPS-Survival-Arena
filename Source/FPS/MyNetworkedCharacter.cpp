@@ -29,6 +29,10 @@ void AMyNetworkedCharacter::BeginPlay()
 			ReplicatedWeapon = CurrentWeapon;
 		}
 	}
+	else
+	{
+		ApplyReplicatedWeapon();
+	}
 }
 
 void AMyNetworkedCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -101,6 +105,8 @@ void AMyNetworkedCharacter::Input_SwitchWeapon()
 
 		if (HasAuthority())
 			ReplicatedWeapon = CurrentWeapon;
+
+		OnWeaponActivated(CurrentWeapon);
 	}
 }
 
@@ -118,15 +124,34 @@ void AMyNetworkedCharacter::Server_StopFiring_Implementation()
 
 void AMyNetworkedCharacter::OnRep_ReplicatedWeapon()
 {
-	if (!ReplicatedWeapon || HasAuthority())
+	ApplyReplicatedWeapon();
+}
+
+void AMyNetworkedCharacter::ApplyReplicatedWeapon()
+{
+	if (HasAuthority() || !ReplicatedWeapon)
 		return;
 
 	if (!OwnedWeapons.Contains(ReplicatedWeapon))
+	{
 		OwnedWeapons.Add(ReplicatedWeapon);
+	}
 
 	if (CurrentWeapon != ReplicatedWeapon)
 	{
+		if (CurrentWeapon)
+		{
+			CurrentWeapon->DeactivateWeapon();
+		}
 		CurrentWeapon = ReplicatedWeapon;
+	}
+
+	// Sync weapon anim instances to character meshes on all clients.
+	OnWeaponActivated(CurrentWeapon);
+
+	if (AMyPlayerState* PS = GetPlayerState<AMyPlayerState>())
+	{
+		UpdateBulletTier(PS->WeaponTier);
 	}
 }
 

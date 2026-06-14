@@ -31,7 +31,9 @@ public:
 	UPROPERTY(ReplicatedUsing = OnRep_AliveCount, BlueprintReadOnly, Category = "Score")
 	int32 AlivePlayerCount = 0;
 
+	void ResetState();
 	void AddScore(int32 Amount);
+	void RecalculateAlivePlayerCount();
 	void OnPlayerDied();
 	void OnPlayerRespawned();
 	void OnPlayerVictory(AMyPlayerState* Winner);
@@ -50,6 +52,8 @@ public:
 	void Multicast_ShowDefeat();
 
 protected:
+	void CheckDefeatCondition();
+
 	UFUNCTION(BlueprintImplementableEvent, meta = (DisplayName = "On Victory"))
 	void BP_OnVictory(const FString& InWinnerName);
 

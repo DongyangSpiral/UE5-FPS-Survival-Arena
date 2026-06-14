@@ -1,5 +1,6 @@
 #include "MyGameStateBase.h"
 #include "MyPlayerState.h"
+#include "MyCharacter.h"
 #include "Net/UnrealNetwork.h"
 #include "Kismet/GameplayStatics.h"
 #include "AIController.h"
@@ -18,6 +19,18 @@ void AMyGameStateBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(AMyGameStateBase, bGameFinished);
 	DOREPLIFETIME(AMyGameStateBase, TeamScore);
 	DOREPLIFETIME(AMyGameStateBase, AlivePlayerCount);
+}
+
+void AMyGameStateBase::ResetState()
+{
+	if (!HasAuthority())
+		return;
+
+	TeamScore = 0;
+	AlivePlayerCount = 0;
+	bGameFinished = false;
+	WinnerName.Empty();
+	PlayerArray.Empty();
 }
 
 void AMyGameStateBase::AddScore(int32 Amount)
@@ -53,31 +66,63 @@ void AMyGameStateBase::AddScore(int32 Amount)
 	}
 }
 
-void AMyGameStateBase::OnPlayerDied()
+void AMyGameStateBase::RecalculateAlivePlayerCount()
 {
 	if (!HasAuthority())
 		return;
 
-	AlivePlayerCount = FMath::Max(0, AlivePlayerCount - 1);
+	int32 AliveCount = 0;
+	bool bAnyPendingRespawn = false;
+
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		const APlayerController* PC = It->Get();
+		if (!PC)
+			continue;
+
+		if (const AMyPlayerState* PS = PC->GetPlayerState<AMyPlayerState>())
+		{
+			if (PS->bPendingRespawn)
+				bAnyPendingRespawn = true;
+		}
+
+		const APawn* Pawn = PC->GetPawn();
+		if (const AMyCharacter* Char = Cast<AMyCharacter>(Pawn))
+		{
+			if (!Char->IsDead())
+				++AliveCount;
+		}
+	}
+
+	AlivePlayerCount = AliveCount;
 	OnRep_AliveCount();
 
-	if (AlivePlayerCount <= 0 && !bGameFinished)
+	if (AliveCount <= 0 && !bAnyPendingRespawn)
 	{
-		bGameFinished = true;
-		WinnerName.Empty();
-
-		FreezeAllActors();
-		Multicast_ShowDefeat();
+		CheckDefeatCondition();
 	}
+}
+
+void AMyGameStateBase::CheckDefeatCondition()
+{
+	if (bGameFinished || PlayerArray.Num() <= 0)
+		return;
+
+	bGameFinished = true;
+	WinnerName.Empty();
+
+	FreezeAllActors();
+	Multicast_ShowDefeat();
+}
+
+void AMyGameStateBase::OnPlayerDied()
+{
+	RecalculateAlivePlayerCount();
 }
 
 void AMyGameStateBase::OnPlayerRespawned()
 {
-	if (!HasAuthority())
-		return;
-
-	++AlivePlayerCount;
-	OnRep_AliveCount();
+	RecalculateAlivePlayerCount();
 }
 
 void AMyGameStateBase::OnPlayerVictory(AMyPlayerState* Winner)
