@@ -35,6 +35,20 @@ void AMyNetworkedCharacter::BeginPlay()
 	}
 }
 
+void AMyNetworkedCharacter::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+
+	if (HasAuthority())
+	{
+		if (AMyPlayerState* PS = GetPlayerState<AMyPlayerState>())
+			PS->bPendingRespawn = false;
+
+		if (AMyGameStateBase* GS = GetWorld()->GetGameState<AMyGameStateBase>())
+			GS->RecalculateAlivePlayerCount();
+	}
+}
+
 void AMyNetworkedCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	AFPSCharacter::SetupPlayerInputComponent(PlayerInputComponent);

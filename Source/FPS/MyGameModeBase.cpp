@@ -37,15 +37,6 @@ void AMyGameModeBase::PostLogin(APlayerController* NewPlayer)
 void AMyGameModeBase::RestartPlayer(AController* NewPlayer)
 {
 	Super::RestartPlayer(NewPlayer);
-
-	if (HasAuthority())
-	{
-		if (AMyPlayerState* PS = NewPlayer->GetPlayerState<AMyPlayerState>())
-			PS->bPendingRespawn = false;
-
-		if (AMyGameStateBase* GS = GetGameState<AMyGameStateBase>())
-			GS->RecalculateAlivePlayerCount();
-	}
 }
 
 void AMyGameModeBase::Logout(AController* Exiting)

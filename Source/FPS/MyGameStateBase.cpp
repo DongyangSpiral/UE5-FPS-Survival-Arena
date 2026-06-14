@@ -30,7 +30,6 @@ void AMyGameStateBase::ResetState()
 	AlivePlayerCount = 0;
 	bGameFinished = false;
 	WinnerName.Empty();
-	PlayerArray.Empty();
 }
 
 void AMyGameStateBase::AddScore(int32 Amount)
@@ -107,6 +106,8 @@ void AMyGameStateBase::CheckDefeatCondition()
 {
 	if (bGameFinished || PlayerArray.Num() <= 0)
 		return;
+
+	UE_LOG(LogFPS, Warning, TEXT("CheckDefeatCondition triggered - freezing all actors"));
 
 	bGameFinished = true;
 	WinnerName.Empty();
