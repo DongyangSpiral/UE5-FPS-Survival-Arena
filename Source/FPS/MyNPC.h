@@ -14,6 +14,7 @@ public:
 
 	virtual void BeginPlay() override;
 	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UPROPERTY(EditAnywhere, Category = "AI")
 	float AttackRange = 600.0f;
@@ -32,4 +33,24 @@ protected:
 	void SafeStartShooting(AActor* ActorToShoot);
 
 	FTimerHandle ChaseTimerHandle;
+
+	UPROPERTY(ReplicatedUsing = OnRep_CurrentHP)
+	float ReplicatedCurrentHP = 100.0f;
+
+	UPROPERTY(ReplicatedUsing = OnRep_bIsDead)
+	bool ReplicatedbIsDead = false;
+
+	UPROPERTY(ReplicatedUsing = OnRep_ReplicatedWeapon)
+	TObjectPtr<AShooterWeapon> ReplicatedWeapon;
+
+	UFUNCTION()
+	void OnRep_CurrentHP();
+
+	UFUNCTION()
+	void OnRep_bIsDead();
+
+	UFUNCTION()
+	void OnRep_ReplicatedWeapon();
+
+	void ApplyDeathState();
 };

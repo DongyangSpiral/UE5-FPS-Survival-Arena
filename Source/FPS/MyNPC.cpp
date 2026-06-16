@@ -9,6 +9,7 @@
 #include "Engine/World.h"
 #include "TimerManager.h"
 #include "Kismet/GameplayStatics.h"
+#include "Net/UnrealNetwork.h"
 
 AMyNPC::AMyNPC()
 {
@@ -20,7 +21,13 @@ AMyNPC::AMyNPC()
 
 void AMyNPC::BeginPlay()
 {
+	TSubclassOf<AShooterWeapon> SavedWeaponClass = WeaponClass;
+	if (!HasAuthority())
+		WeaponClass = nullptr;
+
 	Super::BeginPlay();
+
+	WeaponClass = SavedWeaponClass;
 
 	if (Weapon)
 	{
@@ -33,6 +40,10 @@ void AMyNPC::BeginPlay()
 		if (!Weapon)
 		{
 			UE_LOG(LogFPS, Error, TEXT("AMyNPC::BeginPlay - Weapon is NULL after Super::BeginPlay! Check WeaponClass in BP_SurvivalNPC."));
+		}
+		else
+		{
+			ReplicatedWeapon = Weapon;
 		}
 
 		GetWorld()->GetTimerManager().SetTimerForNextTick(this, &AMyNPC::StopStateTree);
@@ -146,19 +157,56 @@ float AMyNPC::TakeDamage(float Damage, FDamageEvent const& DamageEvent, AControl
 			}
 		}
 
-		bIsDead = true;
-		Tags.Add(DeathTag);
-		SafeStopShooting();
+		ApplyDeathState();
 
-		if (Weapon)
-			Weapon->DeactivateWeapon();
-
-		OnPawnDeath.Broadcast();
-		GetMesh()->SetSimulatePhysics(true);
-		GetMesh()->SetCollisionProfileName(RagdollCollisionProfile);
-		GetCharacterMovement()->StopMovementImmediately();
-		SetLifeSpan(DeferredDestructionTime);
+		if (HasAuthority())
+		{
+			ReplicatedCurrentHP = CurrentHP;
+			ReplicatedbIsDead = bIsDead;
+		}
 	}
 
 	return Damage;
+}
+
+void AMyNPC::ApplyDeathState()
+{
+	bIsDead = true;
+	Tags.Add(DeathTag);
+	SafeStopShooting();
+
+	if (Weapon)
+		Weapon->DeactivateWeapon();
+
+	OnPawnDeath.Broadcast();
+	GetMesh()->SetSimulatePhysics(true);
+	GetMesh()->SetCollisionProfileName(RagdollCollisionProfile);
+	GetCharacterMovement()->StopMovementImmediately();
+	SetLifeSpan(DeferredDestructionTime);
+}
+
+void AMyNPC::OnRep_CurrentHP()
+{
+	if (!HasAuthority())
+		CurrentHP = ReplicatedCurrentHP;
+}
+
+void AMyNPC::OnRep_bIsDead()
+{
+	if (!HasAuthority() && ReplicatedbIsDead)
+		ApplyDeathState();
+}
+
+void AMyNPC::OnRep_ReplicatedWeapon()
+{
+	if (ReplicatedWeapon && !HasAuthority())
+		Weapon = ReplicatedWeapon;
+}
+
+void AMyNPC::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AMyNPC, ReplicatedCurrentHP);
+	DOREPLIFETIME(AMyNPC, ReplicatedbIsDead);
+	DOREPLIFETIME(AMyNPC, ReplicatedWeapon);
 }

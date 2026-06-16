@@ -21,6 +21,8 @@
 #include "TimerManager.h"
 #include "UObject/ConstructorHelpers.h"
 #include "UObject/UObjectGlobals.h"
+#include "Net/UnrealNetwork.h"
+#include "FPSCharacter.h"
 
 AMyCharacter::AMyCharacter()
 {
@@ -96,6 +98,12 @@ void AMyCharacter::BeginPlay()
 	if (HasAuthority())
 	{
 		GiveWeapon();
+		if (CurrentWeapon)
+			ReplicatedWeapon = CurrentWeapon;
+	}
+	else
+	{
+		ApplyReplicatedWeapon();
 	}
 }
 
@@ -137,7 +145,14 @@ void AMyCharacter::UpdateBulletTier(int32 NewTier)
 
 void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
+	AFPSCharacter::SetupPlayerInputComponent(PlayerInputComponent);
+
+	if (UEnhancedInputComponent* EnhancedInput = Cast<UEnhancedInputComponent>(PlayerInputComponent))
+	{
+		EnhancedInput->BindAction(FireAction, ETriggerEvent::Started, this, &AMyCharacter::Input_StartFiring);
+		EnhancedInput->BindAction(FireAction, ETriggerEvent::Completed, this, &AMyCharacter::Input_StopFiring);
+		EnhancedInput->BindAction(SwitchWeaponAction, ETriggerEvent::Triggered, this, &AMyCharacter::Input_SwitchWeapon);
+	}
 
 	APlayerController* PC = Cast<APlayerController>(GetController());
 	if (!PC)
@@ -169,7 +184,6 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 			}
 		}
 	}
-
 }
 
 void AMyCharacter::OnWeaponActivated(AShooterWeapon* Weapon)
@@ -238,4 +252,92 @@ void AMyCharacter::OnRespawn()
 		if (AGameModeBase* GM = GetWorld()->GetAuthGameMode())
 			GM->RestartPlayer(PC);
 	}
+}
+
+void AMyCharacter::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+}
+
+void AMyCharacter::Input_StartFiring()
+{
+	if (!CurrentWeapon || IsDead())
+		return;
+
+	CurrentWeapon->StartFiring();
+
+	if (!HasAuthority())
+		Server_StartFiring();
+}
+
+void AMyCharacter::Input_StopFiring()
+{
+	if (!CurrentWeapon || IsDead())
+		return;
+
+	CurrentWeapon->StopFiring();
+
+	if (!HasAuthority())
+		Server_StopFiring();
+}
+
+void AMyCharacter::Input_SwitchWeapon()
+{
+	if (OwnedWeapons.Num() > 1 && !IsDead())
+	{
+		CurrentWeapon->DeactivateWeapon();
+		int32 Index = OwnedWeapons.Find(CurrentWeapon);
+		Index = (Index == OwnedWeapons.Num() - 1) ? 0 : Index + 1;
+		CurrentWeapon = OwnedWeapons[Index];
+		CurrentWeapon->ActivateWeapon();
+
+		if (HasAuthority())
+			ReplicatedWeapon = CurrentWeapon;
+
+		OnWeaponActivated(CurrentWeapon);
+	}
+}
+
+void AMyCharacter::Server_StartFiring_Implementation()
+{
+	if (CurrentWeapon && !IsDead())
+		CurrentWeapon->StartFiring();
+}
+
+void AMyCharacter::Server_StopFiring_Implementation()
+{
+	if (CurrentWeapon && !IsDead())
+		CurrentWeapon->StopFiring();
+}
+
+void AMyCharacter::OnRep_ReplicatedWeapon()
+{
+	ApplyReplicatedWeapon();
+}
+
+void AMyCharacter::ApplyReplicatedWeapon()
+{
+	if (HasAuthority() || !ReplicatedWeapon)
+		return;
+
+	if (!OwnedWeapons.Contains(ReplicatedWeapon))
+		OwnedWeapons.Add(ReplicatedWeapon);
+
+	if (CurrentWeapon != ReplicatedWeapon)
+	{
+		if (CurrentWeapon)
+			CurrentWeapon->DeactivateWeapon();
+		CurrentWeapon = ReplicatedWeapon;
+	}
+
+	OnWeaponActivated(CurrentWeapon);
+
+	if (AMyPlayerState* PS = GetPlayerState<AMyPlayerState>())
+		UpdateBulletTier(PS->WeaponTier);
+}
+
+void AMyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AMyCharacter, ReplicatedWeapon);
 }

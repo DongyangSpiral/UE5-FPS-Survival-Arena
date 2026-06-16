@@ -22,9 +22,11 @@ public:
 	AMyCharacter();
 
 	virtual void BeginPlay() override;
+	virtual void PossessedBy(AController* NewController) override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 	virtual void OnWeaponActivated(AShooterWeapon* Weapon) override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
 	TSubclassOf<AShooterWeapon> DefaultWeaponClass;
@@ -54,9 +56,24 @@ public:
 
 	FOnCharacterDeath OnCharacterDeath;
 
+	UPROPERTY(ReplicatedUsing = OnRep_ReplicatedWeapon)
+	TObjectPtr<AShooterWeapon> ReplicatedWeapon;
+
+	UFUNCTION()
+	void OnRep_ReplicatedWeapon();
+
+	void ApplyReplicatedWeapon();
+
 protected:
 	void OnRespawn();
 	void GiveWeapon();
+
+	UFUNCTION(Server, Reliable) void Server_StartFiring();
+	UFUNCTION(Server, Reliable) void Server_StopFiring();
+
+	void Input_StartFiring();
+	void Input_StopFiring();
+	void Input_SwitchWeapon();
 
 	UPROPERTY()
 	TSubclassOf<AShooterWeapon> FallbackWeaponClass;
