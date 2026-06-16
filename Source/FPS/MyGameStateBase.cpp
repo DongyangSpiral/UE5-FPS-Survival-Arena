@@ -95,14 +95,17 @@ void AMyGameStateBase::FreezeAllActors()
 
 void AMyGameStateBase::OnRep_AliveCount()
 {
+	OnAliveCountChanged.Broadcast(AlivePlayerCount);
 }
 
 void AMyGameStateBase::Multicast_ShowVictory_Implementation(const FString& Name)
 {
+	OnGameFinished.Broadcast(Name, true);
 	BP_OnVictory(Name);
 }
 
 void AMyGameStateBase::Multicast_ShowDefeat_Implementation()
 {
+	OnGameFinished.Broadcast(TEXT(""), false);
 	BP_OnDefeat();
 }

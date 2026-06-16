@@ -7,6 +7,32 @@
 #include "Engine/World.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
+#include "TimerManager.h"
+
+void UMyUIWidget::NativeConstruct()
+{
+	Super::NativeConstruct();
+	TryBindGameState();
+	TryBindPlayerState();
+}
+
+void UMyUIWidget::NativeDestruct()
+{
+	UnbindFromPawn();
+
+	if (CachedGameState)
+	{
+		CachedGameState->OnAliveCountChanged.RemoveAll(this);
+		CachedGameState->OnGameFinished.RemoveAll(this);
+	}
+	if (CachedPlayerState)
+	{
+		CachedPlayerState->OnScoreChanged.RemoveAll(this);
+		CachedPlayerState->OnWeaponTierChanged.RemoveAll(this);
+	}
+
+	Super::NativeDestruct();
+}
 
 void UMyUIWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
@@ -14,7 +40,6 @@ void UMyUIWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 	APawn* CurrentPawn = GetOwningPlayerPawn();
 
-	// Auto-bind when pawn changes (initial spawn or respawn)
 	if (CurrentPawn && CurrentPawn != CachedPawn)
 	{
 		BindToPawn(Cast<AShooterCharacter>(CurrentPawn));
@@ -26,71 +51,66 @@ void UMyUIWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 		UnbindFromPawn();
 	}
 
-	// Step 1: Poll GameState FIRST (victory/defeat takes priority)
-	if (AMyGameStateBase* GS = GetWorld()->GetGameState<AMyGameStateBase>())
-	{
-		int32 MyScore = 0;
-		if (APlayerController* PC = GetOwningPlayer())
-		{
-			if (AMyPlayerState* PS = PC->GetPlayerState<AMyPlayerState>())
-				MyScore = FMath::RoundToInt(PS->GetScore());
-		}
-		BP_UpdateScore(MyScore, GS->TargetScore);
-		BP_UpdateAliveCount(GS->AlivePlayerCount);
-
-		if (GS->bGameFinished && !bGameFinishedHandled)
-		{
-			bGameFinishedHandled = true;
-			DeathCountdown = -1.0f;
-			BP_HideDeathOverlay();
-			if (GS->WinnerName.IsEmpty())
-				BP_ShowDefeat();
-			else
-				BP_ShowVictory(GS->WinnerName);
-		}
-	}
-
-	// Step 2: Death detection
-	if (AMyCharacter* MyChar = Cast<AMyCharacter>(CurrentPawn))
-	{
-		if (MyChar->IsDead() && DeathCountdown < 0.0f)
-		{
-			AMyGameStateBase* GS = GetWorld()->GetGameState<AMyGameStateBase>();
-			if (!GS || !GS->bGameFinished)
-			{
-				DeathCountdown = MyChar->GetRespawnTime();
-				BP_ShowDeathOverlay(DeathCountdown);
-			}
-		}
-	}
-
-	// Step 3: Tick death countdown
 	if (DeathCountdown > 0.0f)
 	{
 		DeathCountdown -= InDeltaTime;
-		AMyGameStateBase* GS = GetWorld()->GetGameState<AMyGameStateBase>();
-		if (!GS || !GS->bGameFinished)
-		{
-			BP_ShowDeathOverlay(FMath::Max(0.0f, DeathCountdown));
-		}
+		BP_ShowDeathOverlay(FMath::Max(0.0f, DeathCountdown));
 	}
 
-	// Step 4: Poll bullet tier from PlayerState
-	if (APlayerController* PC = GetOwningPlayer())
-	{
-		if (AMyPlayerState* PS = PC->GetPlayerState<AMyPlayerState>())
-		{
-			BP_UpdateBulletTier(PS->WeaponTier);
-		}
-	}
-
-	// Refresh leaderboard every 0.3s (avoid sorting every frame)
 	LeaderboardRefreshTimer -= InDeltaTime;
 	if (LeaderboardRefreshTimer <= 0.0f)
 	{
 		UpdateLeaderboard();
 		LeaderboardRefreshTimer = 0.3f;
 	}
+}
+
+void UMyUIWidget::TryBindGameState()
+{
+	if (CachedGameState)
+		return;
+
+	CachedGameState = GetWorld()->GetGameState<AMyGameStateBase>();
+	if (!CachedGameState)
+	{
+		FTimerHandle Handle;
+		GetWorld()->GetTimerManager().SetTimer(Handle, FTimerDelegate::CreateUObject(this, &UMyUIWidget::TryBindGameState), 0.1f, false);
+		return;
+	}
+
+	CachedGameState->OnAliveCountChanged.AddDynamic(this, &UMyUIWidget::OnAliveCountChanged);
+	CachedGameState->OnGameFinished.AddDynamic(this, &UMyUIWidget::OnGameFinished);
+	BP_UpdateAliveCount(CachedGameState->AlivePlayerCount);
+}
+
+void UMyUIWidget::TryBindPlayerState()
+{
+	if (CachedPlayerState)
+		return;
+
+	APlayerController* PC = GetOwningPlayer();
+	if (!PC)
+	{
+		FTimerHandle Handle;
+		GetWorld()->GetTimerManager().SetTimer(Handle, FTimerDelegate::CreateUObject(this, &UMyUIWidget::TryBindPlayerState), 0.1f, false);
+		return;
+	}
+
+	CachedPlayerState = PC->GetPlayerState<AMyPlayerState>();
+	if (!CachedPlayerState)
+	{
+		FTimerHandle Handle;
+		GetWorld()->GetTimerManager().SetTimer(Handle, FTimerDelegate::CreateUObject(this, &UMyUIWidget::TryBindPlayerState), 0.1f, false);
+		return;
+	}
+
+	CachedPlayerState->OnScoreChanged.AddDynamic(this, &UMyUIWidget::OnScoreChanged);
+	CachedPlayerState->OnWeaponTierChanged.AddDynamic(this, &UMyUIWidget::OnWeaponTierChanged);
+
+	if (AMyGameStateBase* GS = GetWorld()->GetGameState<AMyGameStateBase>())
+		OnScoreChanged(FMath::RoundToInt(CachedPlayerState->GetScore()), GS->TargetScore);
+
+	OnWeaponTierChanged(CachedPlayerState->WeaponTier);
 }
 
 void UMyUIWidget::BindToPawn(AShooterCharacter* NewPawn)
@@ -108,13 +128,12 @@ void UMyUIWidget::BindToPawn(AShooterCharacter* NewPawn)
 	if (AMyCharacter* MyChar = Cast<AMyCharacter>(NewPawn))
 	{
 		MyChar->OnBulletTierChanged.AddDynamic(this, &UMyUIWidget::OnBulletTierChanged);
+		MyChar->OnMyCharacterDied.AddDynamic(this, &UMyUIWidget::OnCharacterDied);
 
 		BP_UpdateHealth(MyChar->GetLifePercent());
 
 		if (AShooterWeapon* Weapon = MyChar->GetCurrentWeapon())
-		{
 			OnBulletCountChanged(Weapon->GetMagazineSize(), Weapon->GetBulletCount());
-		}
 	}
 }
 
@@ -129,6 +148,7 @@ void UMyUIWidget::UnbindFromPawn()
 		if (AMyCharacter* MyChar = Cast<AMyCharacter>(CachedPawn.Get()))
 		{
 			MyChar->OnBulletTierChanged.RemoveAll(this);
+			MyChar->OnMyCharacterDied.RemoveAll(this);
 		}
 	}
 
@@ -148,15 +168,52 @@ void UMyUIWidget::OnPawnDamaged(float LifePercent)
 void UMyUIWidget::OnPawnDestroyed(AActor* DestroyedActor)
 {
 	if (DestroyedActor == CachedPawn)
-	{
 		CachedPawn = nullptr;
-	}
 }
 
 void UMyUIWidget::OnBulletTierChanged(int32 NewTier)
 {
 	BP_UpdateBulletTier(NewTier);
 	BP_ShowTierUp(NewTier);
+}
+
+void UMyUIWidget::OnCharacterDied(float RespawnTime)
+{
+	if (CachedGameState && CachedGameState->bGameFinished)
+		return;
+
+	DeathCountdown = RespawnTime;
+	BP_ShowDeathOverlay(DeathCountdown);
+}
+
+void UMyUIWidget::OnScoreChanged(int32 NewScore, int32 TargetScore)
+{
+	BP_UpdateScore(NewScore, TargetScore);
+}
+
+void UMyUIWidget::OnWeaponTierChanged(int32 NewTier)
+{
+	BP_UpdateBulletTier(NewTier);
+}
+
+void UMyUIWidget::OnAliveCountChanged(int32 NewCount)
+{
+	BP_UpdateAliveCount(NewCount);
+}
+
+void UMyUIWidget::OnGameFinished(const FString& WinnerName, bool bIsVictory)
+{
+	if (bGameFinishedHandled)
+		return;
+
+	bGameFinishedHandled = true;
+	DeathCountdown = -1.0f;
+	BP_HideDeathOverlay();
+
+	if (bIsVictory)
+		BP_ShowVictory(WinnerName);
+	else
+		BP_ShowDefeat();
 }
 
 void UMyUIWidget::UpdateLeaderboard()
@@ -187,7 +244,6 @@ void UMyUIWidget::UpdateLeaderboard()
 		Entries.Add(Entry);
 	}
 
-	// Sort descending by Score
 	Entries.Sort([](const FLeaderboardEntry& A, const FLeaderboardEntry& B)
 	{
 		return A.Score > B.Score;

@@ -7,6 +7,7 @@
 class AShooterCharacter;
 class AMyCharacter;
 class AMyGameStateBase;
+class AMyPlayerState;
 
 USTRUCT(BlueprintType)
 struct FLeaderboardEntry
@@ -30,6 +31,8 @@ class FPS_API UMyUIWidget : public UUserWidget
 
 public:
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+	virtual void NativeConstruct() override;
+	virtual void NativeDestruct() override;
 
 	void BindToPawn(AShooterCharacter* NewPawn);
 	void UnbindFromPawn();
@@ -69,6 +72,8 @@ public:
 
 private:
 	void UpdateLeaderboard();
+	void TryBindGameState();
+	void TryBindPlayerState();
 
 	UFUNCTION()
 	void OnBulletCountChanged(int32 MagazineSize, int32 Bullets);
@@ -82,8 +87,29 @@ private:
 	UFUNCTION()
 	void OnBulletTierChanged(int32 NewTier);
 
+	UFUNCTION()
+	void OnCharacterDied(float RespawnTime);
+
+	UFUNCTION()
+	void OnScoreChanged(int32 NewScore, int32 TargetScore);
+
+	UFUNCTION()
+	void OnWeaponTierChanged(int32 NewTier);
+
+	UFUNCTION()
+	void OnAliveCountChanged(int32 NewCount);
+
+	UFUNCTION()
+	void OnGameFinished(const FString& WinnerName, bool bIsVictory);
+
 	UPROPERTY()
 	TObjectPtr<AShooterCharacter> CachedPawn;
+
+	UPROPERTY()
+	TObjectPtr<AMyGameStateBase> CachedGameState;
+
+	UPROPERTY()
+	TObjectPtr<AMyPlayerState> CachedPlayerState;
 
 	bool bGameFinishedHandled = false;
 	float DeathCountdown = -1.0f;

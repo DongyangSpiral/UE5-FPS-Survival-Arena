@@ -25,6 +25,7 @@ void AMyPlayerState::AddScore(int32 Amount)
 
 		if (AMyGameStateBase* GS = GetWorld()->GetGameState<AMyGameStateBase>())
 		{
+			OnScoreChanged.Broadcast(FMath::RoundToInt(NewScore), GS->TargetScore);
 			if (NewScore >= GS->TargetScore)
 				GS->OnPlayerVictory(this);
 		}
@@ -38,15 +39,24 @@ void AMyPlayerState::ResetScore()
 		SetScore(0);
 		WeaponTier = 0;
 		OnRep_WeaponTier();
+
+		if (AMyGameStateBase* GS = GetWorld()->GetGameState<AMyGameStateBase>())
+			OnScoreChanged.Broadcast(0, GS->TargetScore);
 	}
 }
 
 void AMyPlayerState::OnRep_WeaponTier()
 {
+	OnWeaponTierChanged.Broadcast(WeaponTier);
+
 	if (AMyCharacter* Character = Cast<AMyCharacter>(GetPawn()))
-	{
 		Character->UpdateBulletTier(WeaponTier);
-	}
+}
+
+void AMyPlayerState::OnRep_Score()
+{
+	if (AMyGameStateBase* GS = GetWorld()->GetGameState<AMyGameStateBase>())
+		OnScoreChanged.Broadcast(FMath::RoundToInt(GetScore()), GS->TargetScore);
 }
 
 int32 AMyPlayerState::GetTierForScore(int32 InScore) const

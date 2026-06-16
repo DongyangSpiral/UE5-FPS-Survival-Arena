@@ -6,6 +6,9 @@
 
 class AMyPlayerState;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAliveCountChangedDelegate, int32, AliveCount);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FGameFinishedDelegate, const FString&, WinnerName, bool, bIsVictory);
+
 UCLASS()
 class FPS_API AMyGameStateBase : public AGameStateBase
 {
@@ -27,6 +30,12 @@ public:
 
 	UPROPERTY(ReplicatedUsing = OnRep_AliveCount, BlueprintReadOnly, Category = "Score")
 	int32 AlivePlayerCount = 0;
+
+	UPROPERTY(BlueprintAssignable)
+	FAliveCountChangedDelegate OnAliveCountChanged;
+
+	UPROPERTY(BlueprintAssignable)
+	FGameFinishedDelegate OnGameFinished;
 
 	void ResetState();
 	void SetAlivePlayerCount(int32 NewCount);

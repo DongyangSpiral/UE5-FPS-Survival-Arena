@@ -61,6 +61,39 @@ APlayerState
   └── AMyPlayerState (个人 Score/WeaponTier)
 ```
 
+## 软件工程原则
+
+### 低耦合 · 高内聚
+
+每个类的职责边界必须清晰，避免跨层直接访问：
+
+| 类 | 职责范围 | 不做什么 |
+|---|---|---|
+| `AMyGameStateBase` | 胜负判定（Score ≥ TargetScore / AliveCount ≤ 0） | 不碰伤害、不计个人分 |
+| `AMyPlayerState` | 持有 Score / WeaponTier | 不参与游戏流程编排 |
+| `AMyGameModeBase` | 登录/登出/重生编排 | 不直接计分 |
+| `AMyCharacter` | 射击 + 死亡响应 | 不直接修改 GameState |
+| `AMyNPC` | 死亡时追溯开枪者 | 不关心加分后的逻辑 |
+
+### 项目中使用的设计模式
+
+| 模式 | 使用位置 | 作用 |
+|---|---|---|
+| **观察者** | `OnPawnDeath`、`OnDamaged`、`OnTeamScoreChanged` 等 Delegate | 事件驱动，发布者与订阅者解耦 |
+| **策略** | `Fire()` 按 `WeaponTier` 选 ProjectileClass | 子弹行为可替换，无需改 Fire() 本身 |
+| **工厂** | `GetWorld()->SpawnActor<T>()` | UE 标准创建方式，隐藏构造细节 |
+| **中介者** | `AMyGameModeBase` 协调 GameState / PlayerState / Pawn | 类之间不直接引用，由 GameMode 中转 |
+| **组件** | UE 原生 `UActorComponent`（Camera / Movement / Weapon） | 功能组合替代深层继承 |
+| **状态** | `bGameFinished` 控制流程 / AI StateTree 控制 NPC 行为 | 状态显式化，避免 if-else 泛滥 |
+
+### UE C++ 设计要点
+
+- **头文件最小化**：能用前置声明就不要 `#include`，避免编译链爆炸
+- **RAII**：利用 UE 的 `UPROPERTY()` 管理引用计数，避免手动 Delete
+- **const 正确性**：只读方法标记 `const`，输入参数传 `const&`
+- **网络透明**：`Replicated` 变量自动同步，Server 端修改后客户端自动更新，无需手动 RPC
+- **UClass 反射**：`UPROPERTY` / `UFUNCTION` 不仅决定 GC，还决定序列化、网络复制和蓝图暴露
+
 ## 编码规范
 
 ### C++ 优先原则
