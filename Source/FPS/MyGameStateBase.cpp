@@ -1,6 +1,6 @@
 #include "MyGameStateBase.h"
+#include "FPS.h"
 #include "MyPlayerState.h"
-#include "MyCharacter.h"
 #include "Net/UnrealNetwork.h"
 #include "Kismet/GameplayStatics.h"
 #include "AIController.h"
@@ -17,7 +17,6 @@ void AMyGameStateBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 
 	DOREPLIFETIME(AMyGameStateBase, WinnerName);
 	DOREPLIFETIME(AMyGameStateBase, bGameFinished);
-	DOREPLIFETIME(AMyGameStateBase, TeamScore);
 	DOREPLIFETIME(AMyGameStateBase, AlivePlayerCount);
 }
 
@@ -26,104 +25,32 @@ void AMyGameStateBase::ResetState()
 	if (!HasAuthority())
 		return;
 
-	TeamScore = 0;
 	AlivePlayerCount = 0;
 	bGameFinished = false;
 	WinnerName.Empty();
 }
 
-void AMyGameStateBase::AddScore(int32 Amount)
+void AMyGameStateBase::SetAlivePlayerCount(int32 NewCount)
 {
 	if (!HasAuthority())
 		return;
 
-	TeamScore += Amount;
-	OnRep_TeamScore();
-
-	if (TeamScore >= TargetScore && !bGameFinished)
-	{
-		bGameFinished = true;
-
-		AMyPlayerState* BestPlayer = nullptr;
-		float BestScore = -1.0f;
-		for (APlayerState* PS : PlayerArray)
-		{
-			if (AMyPlayerState* MPS = Cast<AMyPlayerState>(PS))
-			{
-				if (MPS->GetScore() > BestScore)
-				{
-					BestScore = MPS->GetScore();
-					BestPlayer = MPS;
-				}
-			}
-		}
-
-		WinnerName = BestPlayer ? BestPlayer->GetPlayerName() : TEXT("Team");
-
-		FreezeAllActors();
-		Multicast_ShowVictory(WinnerName);
-	}
-}
-
-void AMyGameStateBase::RecalculateAlivePlayerCount()
-{
-	if (!HasAuthority())
-		return;
-
-	int32 AliveCount = 0;
-	bool bAnyPendingRespawn = false;
-
-	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
-	{
-		const APlayerController* PC = It->Get();
-		if (!PC)
-			continue;
-
-		if (const AMyPlayerState* PS = PC->GetPlayerState<AMyPlayerState>())
-		{
-			if (PS->bPendingRespawn)
-				bAnyPendingRespawn = true;
-		}
-
-		const APawn* Pawn = PC->GetPawn();
-		if (const AMyCharacter* Char = Cast<AMyCharacter>(Pawn))
-		{
-			if (!Char->IsDead())
-				++AliveCount;
-		}
-	}
-
-	AlivePlayerCount = AliveCount;
+	AlivePlayerCount = NewCount;
 	OnRep_AliveCount();
-
-	if (AliveCount <= 0 && !bAnyPendingRespawn)
-	{
-		CheckDefeatCondition();
-	}
+	CheckDefeatCondition();
 }
 
 void AMyGameStateBase::CheckDefeatCondition()
 {
-	if (bGameFinished || PlayerArray.Num() <= 0)
+	if (bGameFinished || AlivePlayerCount > 0 || PlayerArray.Num() <= 0)
 		return;
 
 	UE_LOG(LogFPS, Warning, TEXT("CheckDefeatCondition triggered - freezing all actors"));
 
 	bGameFinished = true;
-	WinnerName.Empty();
 
 	FreezeAllActors();
 	Multicast_ShowDefeat();
-}
-
-void AMyGameStateBase::OnPlayerDied()
-{
-	RecalculateAlivePlayerCount();
-}
-
-void AMyGameStateBase::OnPlayerRespawned()
-{
-	RecalculateAlivePlayerCount();
 }
 
 void AMyGameStateBase::OnPlayerVictory(AMyPlayerState* Winner)
@@ -133,8 +60,6 @@ void AMyGameStateBase::OnPlayerVictory(AMyPlayerState* Winner)
 
 	bGameFinished = true;
 	WinnerName = Winner->GetPlayerName();
-	TeamScore = TargetScore;
-	OnRep_TeamScore();
 	Multicast_ShowVictory(WinnerName);
 }
 
@@ -166,10 +91,6 @@ void AMyGameStateBase::FreezeAllActors()
 			}
 		}
 	}
-}
-
-void AMyGameStateBase::OnRep_TeamScore()
-{
 }
 
 void AMyGameStateBase::OnRep_AliveCount()

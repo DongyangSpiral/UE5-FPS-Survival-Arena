@@ -22,9 +22,6 @@ public:
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Game")
 	bool bGameFinished = false;
 
-	UPROPERTY(ReplicatedUsing = OnRep_TeamScore, BlueprintReadOnly, Category = "Score")
-	int32 TeamScore = 0;
-
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Score")
 	int32 TargetScore = 10;
 
@@ -32,15 +29,9 @@ public:
 	int32 AlivePlayerCount = 0;
 
 	void ResetState();
-	void AddScore(int32 Amount);
-	void RecalculateAlivePlayerCount();
-	void OnPlayerDied();
-	void OnPlayerRespawned();
+	void SetAlivePlayerCount(int32 NewCount);
 	void OnPlayerVictory(AMyPlayerState* Winner);
 	void FreezeAllActors();
-
-	UFUNCTION()
-	void OnRep_TeamScore();
 
 	UFUNCTION()
 	void OnRep_AliveCount();

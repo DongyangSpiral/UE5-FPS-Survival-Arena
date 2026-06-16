@@ -27,7 +27,6 @@ void AMyNetworkedNPC::BeginPlay()
 	{
 		if (Weapon)
 		{
-			Weapon->SetReplicates(true);
 			ReplicatedWeapon = Weapon;
 		}
 	}

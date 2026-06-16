@@ -29,7 +29,13 @@ void UMyUIWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 	// Step 1: Poll GameState FIRST (victory/defeat takes priority)
 	if (AMyGameStateBase* GS = GetWorld()->GetGameState<AMyGameStateBase>())
 	{
-		BP_UpdateScore(GS->TeamScore, GS->TargetScore);
+		int32 MyScore = 0;
+		if (APlayerController* PC = GetOwningPlayer())
+		{
+			if (AMyPlayerState* PS = PC->GetPlayerState<AMyPlayerState>())
+				MyScore = FMath::RoundToInt(PS->GetScore());
+		}
+		BP_UpdateScore(MyScore, GS->TargetScore);
 		BP_UpdateAliveCount(GS->AlivePlayerCount);
 
 		if (GS->bGameFinished && !bGameFinishedHandled)

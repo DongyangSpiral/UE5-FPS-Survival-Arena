@@ -12,7 +12,6 @@ void AMyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AMyPlayerState, WeaponTier);
-	DOREPLIFETIME(AMyPlayerState, bPendingRespawn);
 }
 
 void AMyPlayerState::AddScore(int32 Amount)

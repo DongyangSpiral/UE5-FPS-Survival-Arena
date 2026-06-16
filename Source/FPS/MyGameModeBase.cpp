@@ -1,4 +1,5 @@
 #include "MyGameModeBase.h"
+#include "MyCharacter.h"
 #include "MyPlayerState.h"
 #include "MyGameStateBase.h"
 #include "GameFramework/PlayerController.h"
@@ -32,26 +33,50 @@ void AMyGameModeBase::BeginPlay()
 void AMyGameModeBase::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
+
+	if (HasAuthority())
+	{
+		AlivePlayers.Add(NewPlayer);
+		SyncAliveCount();
+	}
 }
 
 void AMyGameModeBase::RestartPlayer(AController* NewPlayer)
 {
 	Super::RestartPlayer(NewPlayer);
+
+	if (HasAuthority())
+	{
+		if (APawn* Pawn = NewPlayer->GetPawn())
+		{
+			if (AMyCharacter* Char = Cast<AMyCharacter>(Pawn))
+				Char->OnCharacterDeath.AddUObject(this, &AMyGameModeBase::HandleCharacterDeath);
+		}
+	}
 }
 
 void AMyGameModeBase::Logout(AController* Exiting)
 {
-	if (HasAuthority())
-	{
-		if (AMyPlayerState* PS = Exiting->GetPlayerState<AMyPlayerState>())
-			PS->bPendingRespawn = false;
-	}
-
 	Super::Logout(Exiting);
 
 	if (HasAuthority())
 	{
-		if (AMyGameStateBase* GS = GetGameState<AMyGameStateBase>())
-			GS->RecalculateAlivePlayerCount();
+		AlivePlayers.Remove(Cast<APlayerController>(Exiting));
+		SyncAliveCount();
 	}
+}
+
+void AMyGameModeBase::HandleCharacterDeath(AController* DeadPlayer)
+{
+	if (!HasAuthority() || !DeadPlayer)
+		return;
+
+	AlivePlayers.Remove(Cast<APlayerController>(DeadPlayer));
+	SyncAliveCount();
+}
+
+void AMyGameModeBase::SyncAliveCount()
+{
+	if (AMyGameStateBase* GS = GetGameState<AMyGameStateBase>())
+		GS->SetAlivePlayerCount(AlivePlayers.Num());
 }

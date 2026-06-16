@@ -207,13 +207,7 @@ float AMyCharacter::TakeDamage(float Damage, FDamageEvent const& DamageEvent, AC
 		GetMesh()->SetAnimInstanceClass(nullptr);
 
 		if (AMyPlayerState* PS = GetPlayerState<AMyPlayerState>())
-		{
 			PS->ResetScore();
-			if (HasAuthority())
-			{
-				PS->bPendingRespawn = true;
-			}
-		}
 
 		Tags.Add(DeathTag);
 		GetCharacterMovement()->StopMovementImmediately();
@@ -223,10 +217,7 @@ float AMyCharacter::TakeDamage(float Damage, FDamageEvent const& DamageEvent, AC
 		OnMyCharacterDied.Broadcast(RespawnTime);
 
 		if (HasAuthority())
-		{
-			if (AMyGameStateBase* GS = GetWorld()->GetGameState<AMyGameStateBase>())
-				GS->OnPlayerDied();
-		}
+			OnCharacterDeath.Broadcast(GetController());
 
 		GetWorld()->GetTimerManager().SetTimer(RespawnTimer, this, &AMyCharacter::OnRespawn, RespawnTime, false);
 	}

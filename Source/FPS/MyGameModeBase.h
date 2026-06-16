@@ -19,6 +19,11 @@ public:
 	virtual void Logout(AController* Exiting) override;
 	virtual void RestartPlayer(AController* NewPlayer) override;
 
+	void SyncAliveCount();
+	void HandleCharacterDeath(AController* DeadPlayer);
+
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<UMyUIWidget> MyUIClass;
+
+	TSet<APlayerController*> AlivePlayers;
 };

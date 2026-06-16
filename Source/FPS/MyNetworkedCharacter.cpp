@@ -1,6 +1,5 @@
 #include "MyNetworkedCharacter.h"
 #include "FPS.h"
-#include "MyGameStateBase.h"
 #include "MyPlayerState.h"
 #include "MyUIWidget.h"
 #include "Variant_Shooter/Weapons/ShooterWeapon.h"
@@ -25,7 +24,6 @@ void AMyNetworkedCharacter::BeginPlay()
 	{
 		if (CurrentWeapon)
 		{
-			CurrentWeapon->SetReplicates(true);
 			ReplicatedWeapon = CurrentWeapon;
 		}
 	}
@@ -38,15 +36,6 @@ void AMyNetworkedCharacter::BeginPlay()
 void AMyNetworkedCharacter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
-
-	if (HasAuthority())
-	{
-		if (AMyPlayerState* PS = GetPlayerState<AMyPlayerState>())
-			PS->bPendingRespawn = false;
-
-		if (AMyGameStateBase* GS = GetWorld()->GetGameState<AMyGameStateBase>())
-			GS->RecalculateAlivePlayerCount();
-	}
 }
 
 void AMyNetworkedCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)

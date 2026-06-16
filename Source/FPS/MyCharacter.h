@@ -11,6 +11,7 @@ class UMyUIWidget;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMyCharacterDiedDelegate, float, RespawnTime);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMyBulletTierChangedDelegate, int32, NewTier);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnCharacterDeath, AController*);
 
 UCLASS()
 class FPS_API AMyCharacter : public AShooterCharacter
@@ -50,6 +51,8 @@ public:
 
 	UPROPERTY(BlueprintAssignable)
 	FMyBulletTierChangedDelegate OnBulletTierChanged;
+
+	FOnCharacterDeath OnCharacterDeath;
 
 protected:
 	void OnRespawn();

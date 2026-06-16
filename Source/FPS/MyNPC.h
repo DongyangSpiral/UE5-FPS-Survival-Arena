@@ -4,8 +4,6 @@
 #include "Variant_Shooter/AI/ShooterNPC.h"
 #include "MyNPC.generated.h"
 
-class AMyGameStateBase;
-
 UCLASS()
 class FPS_API AMyNPC : public AShooterNPC
 {

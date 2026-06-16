@@ -7,12 +7,12 @@
 | 属性 | 值 |
 |------|-----|
 | 引擎 | Unreal Engine 5.7 |
-| 项目类型 | 多人合作 PVE FPS |
+| 项目类型 | 多人竞技 PVE FPS |
 | 网络模式 | Listen Server（最多 4 人） |
 | 开发语言 | **C++ 优先**（仅在必要时用蓝图） |
 | 基础模板 | UE5 Shooter C++ Template（Variant_Shooter） |
-| 胜利条件 | 团队总分 ≥ 10 |
-| 失败条件 | 所有玩家同时死亡 |
+| 胜利条件 | 个人先到 10 分 |
+| 失败条件 | 场上存活人数 = 0 |
 
 ## 项目结构
 
@@ -34,9 +34,10 @@ Source/FPS/
 │       ├── ShooterAIController# AI 控制器（感知 + StateTree）
 │       └── ShooterNPCSpawner  # 逐个刷怪（死一个刷一个）
 │
-├── MyCharacter.h/.cpp         # PVE 角色（继承 ShooterCharacter）
+├── MyCharacter.h/.cpp         # 玩家角色（继承 ShooterCharacter）
+├── MyPlayerState.h/.cpp       # 个人分数+武器等级
 ├── MyGameModeBase.h/.cpp      # PVE GameMode（继承 GameModeBase）
-├── MyGameStateBase.h/.cpp     # PVE GameState（团队分数/胜负判定）
+├── MyGameStateBase.h/.cpp     # PVE GameState（胜负判定）
 └── MyNPC.h/.cpp               # PVE NPC（继承 ShooterNPC，死时加分）
 ```
 
@@ -48,13 +49,16 @@ AFPSCharacter (移动/视角)
         └── AMyCharacter (PVE 改造)
 
 AShooterNPC (AI 控制的射击角色)
-  └── AMyNPC (PVE: 死亡时 AddScore)
+  └── AMyNPC (PVE: 死亡时给最后一击者加分)
 
 AGameModeBase
   └── AMyGameModeBase (PVE: 绑定 GameState/管理玩家)
 
 AGameStateBase
-  └── AMyGameStateBase (PVE: TeamScore/胜负判定)
+  └── AMyGameStateBase (PVE: 胜负判定/WinnerName)
+
+APlayerState
+  └── AMyPlayerState (个人 Score/WeaponTier)
 ```
 
 ## 编码规范
@@ -94,35 +98,44 @@ AGameStateBase
 ### RPC 调用链（核心流程）
 ```
 子弹命中 NPC → Server 端 TakeDamage → NPC 死亡
-  → GameState.AddScore(1) (Server Only)
-  → TeamScore 自动同步到所有客户端
-  → TeamScore >= TargetScore → Multicast_ShowVictory
+  → 追溯 DamageCauser → InstigatorController → PlayerState
+  → PlayerState.Score += 1 (Server Only)
+  → Score 自动同步到所有客户端
+  → Score >= TargetScore → Multicast_ShowVictory(WinnerName)
 ```
 
 ## PVE 核心逻辑规则
 
 ### GameState（AMyGameStateBase）
-- `TeamScore`：团队总分，`Replicated`
+- `WinnerName`：获胜者名字，`Replicated`
 - `TargetScore`：目标分数（默认 10），`EditDefaultsOnly`
 - `AlivePlayerCount`：存活玩家数，`Replicated`
 - `bGameFinished`：游戏是否结束，`Replicated`
-- 胜利：`TeamScore >= TargetScore && !bGameFinished`
-- 失败：`AlivePlayerCount <= 0 && !bGameFinished`
+- 胜利：有人 Score >= TargetScore && !bGameFinished
+- 失败：AlivePlayerCount <= 0 && !bGameFinished
+
+### PlayerState（AMyPlayerState）
+- `Score`：个人分数，`Replicated`
+- `WeaponTier`：武器等级（0~3），`Replicated`
+- 分数变化时更新 WeaponTier
+- 死亡时 Score = 0, WeaponTier = 0
 
 ### GameMode（AMyGameModeBase）
 - 设置 `GameStateClass = AMyGameStateBase`
+- 设置 `PlayerStateClass = AMyPlayerState`
 - `PostLogin`：调用 `GameState.OnPlayerRespawned()`
 - `Logout`：调用 `GameState.OnPlayerDied()`
 - `BeginPlay`：统计初始存活玩家数
 
 ### 角色（AMyCharacter）
-- `TakeDamage`：扣血 → 死亡 → `GameState.OnPlayerDied()`
+- `TakeDamage`：扣血 → 死亡 → `GameState.OnPlayerDied()`，分数归零
+- `Fire()`：根据 PlayerState.WeaponTier 选择对应子弹
 - 死亡后 DisableInput + 计时器 5 秒 → `OnRespawn` → `Destroy()`
 - GameMode 自动 RestartPlayer 生成新 Pawn
 
 ### NPC（AMyNPC）
 - 继承 `AShooterNPC`
-- `TakeDamage`：扣血 → 死亡 → `GameState.AddScore(1)`
+- `TakeDamage`：扣血 → 死亡 → 追溯最后一击者 PlayerState → Score += 1
 - 不修改 `Variant_Shooter` 模板代码
 
 ## Unity → UE 对照表
