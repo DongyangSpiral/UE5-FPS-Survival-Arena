@@ -8,6 +8,7 @@ class AShooterCharacter;
 class AMyCharacter;
 class AMyGameStateBase;
 class AMyPlayerState;
+class UMyLeaderboard;
 
 USTRUCT(BlueprintType)
 struct FLeaderboardEntry
@@ -110,6 +111,9 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<AMyPlayerState> CachedPlayerState;
+
+	UPROPERTY()
+	TObjectPtr<UMyLeaderboard> Leaderboard;
 
 	bool bGameFinishedHandled = false;
 	float DeathCountdown = -1.0f;

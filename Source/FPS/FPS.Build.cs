@@ -21,7 +21,9 @@ public class FPS : ModuleRules
 			"Slate"
 		});
 
-		PrivateDependencyModuleNames.AddRange(new string[] { });
+		PrivateDependencyModuleNames.AddRange(new string[] {
+			"SlateCore"
+		});
 
 		PublicIncludePaths.AddRange(new string[] {
 			"FPS",

@@ -1,4 +1,5 @@
 #include "MyUIWidget.h"
+#include "MyLeaderboard.h"
 #include "MyCharacter.h"
 #include "MyGameStateBase.h"
 #include "MyPlayerState.h"
@@ -14,6 +15,15 @@ void UMyUIWidget::NativeConstruct()
 	Super::NativeConstruct();
 	TryBindGameState();
 	TryBindPlayerState();
+
+	if (!Leaderboard)
+	{
+		Leaderboard = CreateWidget<UMyLeaderboard>(this, UMyLeaderboard::StaticClass());
+		if (Leaderboard)
+		{
+			Leaderboard->AddToViewport(1);
+		}
+	}
 }
 
 void UMyUIWidget::NativeDestruct()
@@ -29,6 +39,12 @@ void UMyUIWidget::NativeDestruct()
 	{
 		CachedPlayerState->OnScoreChanged.RemoveAll(this);
 		CachedPlayerState->OnWeaponTierChanged.RemoveAll(this);
+	}
+
+	if (Leaderboard)
+	{
+		Leaderboard->RemoveFromParent();
+		Leaderboard = nullptr;
 	}
 
 	Super::NativeDestruct();
@@ -252,5 +268,8 @@ void UMyUIWidget::UpdateLeaderboard()
 	AMyGameStateBase* MGS = Cast<AMyGameStateBase>(GS);
 	int32 Target = MGS ? MGS->TargetScore : 10;
 
-	BP_UpdateLeaderboard(Entries, Target);
+	if (Leaderboard)
+	{
+		Leaderboard->UpdateEntries(Entries, Target);
+	}
 }
