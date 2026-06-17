@@ -145,7 +145,15 @@ void AMyCharacter::UpdateBulletTier(int32 NewTier)
 
 void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
-	AFPSCharacter::SetupPlayerInputComponent(PlayerInputComponent);
+	UInputAction* SavedFire = FireAction;
+	UInputAction* SavedSwitch = SwitchWeaponAction;
+	FireAction = nullptr;
+	SwitchWeaponAction = nullptr;
+
+	Super::SetupPlayerInputComponent(PlayerInputComponent);
+
+	FireAction = SavedFire;
+	SwitchWeaponAction = SavedSwitch;
 
 	if (UEnhancedInputComponent* EnhancedInput = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
@@ -264,10 +272,12 @@ void AMyCharacter::Input_StartFiring()
 	if (!CurrentWeapon || IsDead())
 		return;
 
-	CurrentWeapon->StartFiring();
+	FVector AimTarget = GetWeaponTargetLocation();
+
+	CurrentWeapon->StartFiringWithTarget(AimTarget);
 
 	if (!HasAuthority())
-		Server_StartFiring();
+		Server_StartFiring(AimTarget);
 }
 
 void AMyCharacter::Input_StopFiring()
@@ -298,10 +308,10 @@ void AMyCharacter::Input_SwitchWeapon()
 	}
 }
 
-void AMyCharacter::Server_StartFiring_Implementation()
+void AMyCharacter::Server_StartFiring_Implementation(FVector_NetQuantize AimTarget)
 {
 	if (CurrentWeapon && !IsDead())
-		CurrentWeapon->StartFiring();
+		CurrentWeapon->StartFiringWithTarget(AimTarget);
 }
 
 void AMyCharacter::Server_StopFiring_Implementation()

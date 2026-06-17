@@ -90,6 +90,12 @@ void AShooterWeapon::DeactivateWeapon()
 	WeaponOwner->OnWeaponDeactivated(this);
 }
 
+void AShooterWeapon::StartFiringWithTarget(const FVector& TargetLocation)
+{
+	OverrideTargetLocation = TargetLocation;
+	StartFiring();
+}
+
 void AShooterWeapon::StartFiring()
 {
 	// raise the firing flag
@@ -132,8 +138,10 @@ void AShooterWeapon::Fire()
 		return;
 	}
 	
-	// fire a projectile at the target
-	FireProjectile(WeaponOwner->GetWeaponTargetLocation());
+	// fire a projectile at the target (use override if set, else compute from weapon owner)
+	const FVector Target = OverrideTargetLocation.IsNearlyZero() ? WeaponOwner->GetWeaponTargetLocation() : OverrideTargetLocation;
+	OverrideTargetLocation = FVector::ZeroVector;
+	FireProjectile(Target);
 
 	// update the time of our last shot
 	TimeOfLastShot = GetWorld()->GetTimeSeconds();
@@ -162,22 +170,22 @@ void AShooterWeapon::FireCooldownExpired()
 
 void AShooterWeapon::FireProjectile(const FVector& TargetLocation)
 {
-	// get the projectile transform
-	FTransform ProjectileTransform = CalculateProjectileSpawnTransform(TargetLocation);
-	
-	// spawn the projectile
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	SpawnParams.TransformScaleMethod = ESpawnActorScaleMethod::OverrideRootScale;
-	SpawnParams.Owner = GetOwner();
-	SpawnParams.Instigator = PawnOwner;
+	// spawn the authoritative projectile only on the server
+	if (HasAuthority())
+	{
+		FTransform ProjectileTransform = CalculateProjectileSpawnTransform(TargetLocation);
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		SpawnParams.TransformScaleMethod = ESpawnActorScaleMethod::OverrideRootScale;
+		SpawnParams.Owner = GetOwner();
+		SpawnParams.Instigator = PawnOwner;
+		GetWorld()->SpawnActor<AShooterProjectile>(ProjectileClass, ProjectileTransform, SpawnParams);
+	}
 
-	AShooterProjectile* Projectile = GetWorld()->SpawnActor<AShooterProjectile>(ProjectileClass, ProjectileTransform, SpawnParams);
-
-	// play the firing montage
+	// play the firing montage (all machines — cosmetic)
 	WeaponOwner->PlayFiringMontage(FiringMontage);
 
-	// add recoil
+	// add recoil (all machines)
 	WeaponOwner->AddWeaponRecoil(FiringRecoil);
 
 	// consume bullets

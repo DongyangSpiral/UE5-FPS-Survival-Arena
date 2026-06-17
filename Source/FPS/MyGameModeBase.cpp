@@ -52,6 +52,12 @@ void AMyGameModeBase::RestartPlayer(AController* NewPlayer)
 			if (AMyCharacter* Char = Cast<AMyCharacter>(Pawn))
 				Char->OnCharacterDeath.AddUObject(this, &AMyGameModeBase::HandleCharacterDeath);
 		}
+
+		if (APlayerController* PC = Cast<APlayerController>(NewPlayer))
+		{
+			AlivePlayers.Add(PC);
+			SyncAliveCount();
+		}
 	}
 }
 

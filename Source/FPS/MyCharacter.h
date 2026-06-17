@@ -68,7 +68,7 @@ protected:
 	void OnRespawn();
 	void GiveWeapon();
 
-	UFUNCTION(Server, Reliable) void Server_StartFiring();
+	UFUNCTION(Server, Reliable) void Server_StartFiring(FVector_NetQuantize AimTarget);
 	UFUNCTION(Server, Reliable) void Server_StopFiring();
 
 	void Input_StartFiring();

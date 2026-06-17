@@ -57,10 +57,13 @@ void AShooterNPC::AttachWeaponMeshes(AShooterWeapon* WeaponToAttach)
 {
 	const FAttachmentTransformRules AttachmentRule(EAttachmentRule::SnapToTarget, false);
 
-	// attach the weapon actor
-	WeaponToAttach->AttachToActor(this, AttachmentRule);
+	// attach the weapon actor (server only — replicated to clients)
+	if (HasAuthority())
+	{
+		WeaponToAttach->AttachToActor(this, AttachmentRule);
+	}
 
-	// attach the weapon meshes
+	// attach the weapon meshes to sockets (all machines — reliable even when not replicated)
 	WeaponToAttach->GetFirstPersonMesh()->AttachToComponent(GetFirstPersonMesh(), AttachmentRule, FirstPersonWeaponSocket);
 	WeaponToAttach->GetThirdPersonMesh()->AttachToComponent(GetMesh(), AttachmentRule, ThirdPersonWeaponSocket);
 }

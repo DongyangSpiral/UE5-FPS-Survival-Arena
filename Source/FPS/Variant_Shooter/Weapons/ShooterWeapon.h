@@ -94,6 +94,9 @@ protected:
 	/** Timer to handle full auto refiring */
 	FTimerHandle RefireTimer;
 
+	/** Override target location set by StartFiringWithTarget, else computed from weapon owner */
+	FVector OverrideTargetLocation;
+
 	/** Cast pawn pointer to the owner for AI perception system interactions */
 	TObjectPtr<APawn> PawnOwner;
 
@@ -141,6 +144,9 @@ public:
 
 	/** Stop firing this weapon */
 	void StopFiring();
+
+	/** Start firing using a pre-computed aim target (instead of re-calculating from weapon owner) */
+	void StartFiringWithTarget(const FVector& TargetLocation);
 
 protected:
 

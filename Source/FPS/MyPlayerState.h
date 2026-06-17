@@ -38,8 +38,7 @@ public:
 	UFUNCTION()
 	void OnRep_WeaponTier();
 
-	UFUNCTION()
-	virtual void OnRep_Score();
+	virtual void OnRep_Score() override;
 
 	int32 GetTierForScore(int32 InScore) const;
 };
