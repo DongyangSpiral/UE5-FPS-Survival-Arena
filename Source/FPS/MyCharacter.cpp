@@ -237,6 +237,7 @@ float AMyCharacter::TakeDamage(float Damage, FDamageEvent const& DamageEvent, AC
 		if (AMyPlayerState* PS = GetPlayerState<AMyPlayerState>())
 			PS->ResetScore();
 
+		Tags.Remove(FName("Player"));
 		Tags.Add(DeathTag);
 		GetCharacterMovement()->StopMovementImmediately();
 		DisableInput(Cast<APlayerController>(GetController()));

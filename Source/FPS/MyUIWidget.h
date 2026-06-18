@@ -71,6 +71,9 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void BP_UpdateLeaderboard(const TArray<FLeaderboardEntry>& Entries, int32 TargetScore);
 
+	UFUNCTION(BlueprintCallable, Category="Game")
+	void ReturnToLobby();
+
 private:
 	void UpdateLeaderboard();
 	void TryBindGameState();

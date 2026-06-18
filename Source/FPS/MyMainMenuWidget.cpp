@@ -50,12 +50,26 @@ void UMyMainMenuWidget::NativeOnInitialized()
 		CS->SetAnchors(FAnchors(0.f, 0.f, 1.f, 1.f));
 		CS->SetOffsets(FMargin(0.f));
 	}
+	Bg->SetBrushColor(FLinearColor(1.f, 1.f, 1.f, 0.8f));
+
+	// Title
+	UTextBlock* Title = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("Title"));
+	Title->SetText(FText::FromString(TEXT("SURVIVAL ARENA")));
+	Title->SetFont(FCoreStyle::GetDefaultFontStyle("Bold", 42));
+	Title->SetColorAndOpacity(FLinearColor(1.f, 1.f, 1.f, 0.95f));
+	Title->SetJustification(ETextJustify::Center);
+	{
+		UCanvasPanelSlot* CS = RootCanvas->AddChildToCanvas(Title);
+		CS->SetAnchors(FAnchors(0.5f, 0.3f, 0.5f, 0.3f));
+		CS->SetAlignment(FVector2D(0.5f, 0.5f));
+		CS->SetAutoSize(true);
+	}
 
 	// Center content
 	UVerticalBox* MainBox = WidgetTree->ConstructWidget<UVerticalBox>(UVerticalBox::StaticClass(), TEXT("MainBox"));
 	{
 		UCanvasPanelSlot* CS = RootCanvas->AddChildToCanvas(MainBox);
-		CS->SetAnchors(FAnchors(0.5f, 0.55f, 0.5f, 0.55f));
+		CS->SetAnchors(FAnchors(0.5f, 0.75f, 0.5f, 0.75f));
 		CS->SetAlignment(FVector2D(0.5f, 0.5f));
 		CS->SetPosition(FVector2D(0.f, 0.f));
 		CS->SetAutoSize(true);

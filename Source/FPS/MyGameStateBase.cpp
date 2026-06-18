@@ -60,6 +60,7 @@ void AMyGameStateBase::OnPlayerVictory(AMyPlayerState* Winner)
 
 	bGameFinished = true;
 	WinnerName = Winner->GetPlayerName();
+	FreezeAllActors();
 	Multicast_ShowVictory(WinnerName);
 }
 
@@ -102,10 +103,28 @@ void AMyGameStateBase::Multicast_ShowVictory_Implementation(const FString& Name)
 {
 	OnGameFinished.Broadcast(Name, true);
 	BP_OnVictory(Name);
+
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (APlayerController* PC = It->Get())
+		{
+			PC->SetShowMouseCursor(true);
+			PC->SetInputMode(FInputModeUIOnly());
+		}
+	}
 }
 
 void AMyGameStateBase::Multicast_ShowDefeat_Implementation()
 {
 	OnGameFinished.Broadcast(TEXT(""), false);
 	BP_OnDefeat();
+
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (APlayerController* PC = It->Get())
+		{
+			PC->SetShowMouseCursor(true);
+			PC->SetInputMode(FInputModeUIOnly());
+		}
+	}
 }

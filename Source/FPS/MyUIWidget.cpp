@@ -273,3 +273,22 @@ void UMyUIWidget::UpdateLeaderboard()
 		Leaderboard->UpdateEntries(Entries, Target);
 	}
 }
+
+void UMyUIWidget::ReturnToLobby()
+{
+	APlayerController* PC = GetOwningPlayer();
+	if (!PC)
+		return;
+
+	PC->SetInputMode(FInputModeGameOnly());
+	PC->SetShowMouseCursor(false);
+
+	if (PC->HasAuthority())
+	{
+		GetWorld()->ServerTravel(TEXT("/Game/Lvl_Lobby"));
+	}
+	else
+	{
+		PC->ClientTravel(TEXT("/Game/Lvl_MainMenu"), TRAVEL_Absolute);
+	}
+}
