@@ -42,4 +42,7 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<UEditableTextBox> IPInputBox;
+
+	UPROPERTY()
+	TObjectPtr<UEditableTextBox> NameInputBox;
 };

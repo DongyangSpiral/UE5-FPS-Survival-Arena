@@ -15,6 +15,7 @@
 #include "Styling/CoreStyle.h"
 #include "Styling/SlateTypes.h"
 #include "GameFramework/PlayerController.h"
+#include "GameFramework/PlayerState.h"
 #include "Kismet/GameplayStatics.h"
 
 void UMyMainMenuWidget::NativeOnInitialized()
@@ -52,6 +53,32 @@ void UMyMainMenuWidget::NativeOnInitialized()
 	{
 		UVerticalBoxSlot* VS = MainBox->AddChildToVerticalBox(Title);
 		VS->SetPadding(FMargin(0.f, 0.f, 0.f, 40.f));
+		VS->SetHorizontalAlignment(EHorizontalAlignment::HAlign_Center);
+	}
+
+	// Player name input
+	UTextBlock* NameLabel = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("NameLabel"));
+	NameLabel->SetText(FText::FromString(TEXT("Player Name")));
+	NameLabel->SetFont(FCoreStyle::GetDefaultFontStyle("Regular", 14));
+	NameLabel->SetColorAndOpacity(FLinearColor(0.7f, 0.7f, 0.7f));
+	NameLabel->SetJustification(ETextJustify::Center);
+	{
+		UVerticalBoxSlot* VS = MainBox->AddChildToVerticalBox(NameLabel);
+		VS->SetPadding(FMargin(0.f, 0.f, 0.f, 4.f));
+		VS->SetHorizontalAlignment(EHorizontalAlignment::HAlign_Center);
+	}
+
+	NameInputBox = WidgetTree->ConstructWidget<UEditableTextBox>(UEditableTextBox::StaticClass(), TEXT("NameInput"));
+	NameInputBox->SetHintText(FText::FromString(TEXT("Enter your name")));
+	NameInputBox->WidgetStyle.ForegroundColor = FSlateColor(FLinearColor(0.05f, 0.05f, 0.05f));
+	{
+		USizeBox* SB = WidgetTree->ConstructWidget<USizeBox>(USizeBox::StaticClass());
+		SB->SetWidthOverride(260.f);
+		SB->SetHeightOverride(36.f);
+		SB->SetContent(NameInputBox);
+
+		UVerticalBoxSlot* VS = MainBox->AddChildToVerticalBox(SB);
+		VS->SetPadding(FMargin(0.f, 0.f, 0.f, 24.f));
 		VS->SetHorizontalAlignment(EHorizontalAlignment::HAlign_Center);
 	}
 
@@ -261,6 +288,13 @@ void UMyMainMenuWidget::OnCreateRoom()
 	APlayerController* PC = GetOwningPlayer();
 	if (PC)
 	{
+		FString PlayerName = NameInputBox ? NameInputBox->GetText().ToString().TrimStartAndEnd() : FString();
+		if (PlayerName.IsEmpty())
+			PlayerName = TEXT("Player");
+
+		if (APlayerState* PS = PC->GetPlayerState<APlayerState>())
+			PS->SetPlayerName(PlayerName);
+
 		PC->SetInputMode(FInputModeGameOnly());
 		PC->SetShowMouseCursor(false);
 	}
@@ -292,6 +326,12 @@ void UMyMainMenuWidget::OnConnect()
 
 	if (!IP.Contains(TEXT(".")))
 		return;
+
+	FString PlayerName = NameInputBox ? NameInputBox->GetText().ToString().TrimStartAndEnd() : FString();
+	if (PlayerName.IsEmpty())
+		PlayerName = TEXT("Player");
+
+	IP += TEXT("?Name=") + PlayerName;
 
 	APlayerController* PC = GetOwningPlayer();
 	if (PC)

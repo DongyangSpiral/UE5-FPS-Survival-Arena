@@ -11,4 +11,6 @@ class FPS_API AMyLobbyGameMode : public AGameModeBase
 
 public:
 	AMyLobbyGameMode();
+
+	virtual void PreLogin(const FString& Options, const FString& Address, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage) override;
 };
