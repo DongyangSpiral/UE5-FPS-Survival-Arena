@@ -192,6 +192,12 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 			}
 		}
 	}
+
+	if (IsLocallyControlled())
+	{
+		PC->SetInputMode(FInputModeGameOnly());
+		PC->SetShowMouseCursor(false);
+	}
 }
 
 void AMyCharacter::OnWeaponActivated(AShooterWeapon* Weapon)

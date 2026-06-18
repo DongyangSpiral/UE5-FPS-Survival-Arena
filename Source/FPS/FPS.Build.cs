@@ -22,7 +22,8 @@ public class FPS : ModuleRules
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {
-			"SlateCore"
+			"SlateCore",
+			"Sockets"
 		});
 
 		PublicIncludePaths.AddRange(new string[] {
