@@ -84,7 +84,6 @@ void UMyMainMenuWidget::NativeOnInitialized()
 	}
 
 	// Create button
-	UButton* CreateBtn = nullptr;
 	{
 		UButton* Btn = WidgetTree->ConstructWidget<UButton>(UButton::StaticClass());
 		UTextBlock* Txt = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass());
@@ -113,7 +112,6 @@ void UMyMainMenuWidget::NativeOnInitialized()
 	}
 
 	// Join button
-	UButton* JoinBtn = nullptr;
 	{
 		UButton* Btn = WidgetTree->ConstructWidget<UButton>(UButton::StaticClass());
 		UTextBlock* Txt = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass());
@@ -134,6 +132,7 @@ void UMyMainMenuWidget::NativeOnInitialized()
 		SB->SetWidthOverride(260.f);
 		SB->SetHeightOverride(50.f);
 		SB->SetContent(Btn);
+		JoinBtn = Btn;
 
 		UVerticalBoxSlot* VS = MainBox->AddChildToVerticalBox(SB);
 		VS->SetPadding(FMargin(0.f, 0.f, 0.f, 12.f));
@@ -161,9 +160,22 @@ void UMyMainMenuWidget::NativeOnInitialized()
 		SB->SetWidthOverride(260.f);
 		SB->SetHeightOverride(50.f);
 		SB->SetContent(Btn);
+		QuitBtn = Btn;
 
 		UVerticalBoxSlot* VS = MainBox->AddChildToVerticalBox(SB);
 		VS->SetPadding(FMargin(0.f, 0.f, 0.f, 0.f));
+		VS->SetHorizontalAlignment(EHorizontalAlignment::HAlign_Center);
+	}
+
+	// Waiting text (initially hidden, shown for clients)
+	WaitingText = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("WaitingText"));
+	WaitingText->SetText(FText::FromString(TEXT("Waiting for host to start the game...")));
+	WaitingText->SetFont(FCoreStyle::GetDefaultFontStyle("Regular", 14));
+	WaitingText->SetColorAndOpacity(FLinearColor(0.6f, 0.6f, 0.6f));
+	WaitingText->SetJustification(ETextJustify::Center);
+	WaitingText->SetVisibility(ESlateVisibility::Collapsed);
+	{
+		UVerticalBoxSlot* VS = MainBox->AddChildToVerticalBox(WaitingText);
 		VS->SetHorizontalAlignment(EHorizontalAlignment::HAlign_Center);
 	}
 
@@ -281,6 +293,16 @@ void UMyMainMenuWidget::NativeOnInitialized()
 
 		UHorizontalBoxSlot* HS = OverlayBtnRow->AddChildToHorizontalBox(SB);
 		HS->SetPadding(FMargin(10.f, 0.f, 0.f, 0.f));
+	}
+
+	// Client mode: hide host-only buttons and show waiting text
+	APlayerController* PC = GetOwningPlayer();
+	if (PC && !PC->HasAuthority())
+	{
+		CreateBtn->SetVisibility(ESlateVisibility::Collapsed);
+		JoinBtn->SetVisibility(ESlateVisibility::Collapsed);
+		QuitBtn->SetVisibility(ESlateVisibility::Collapsed);
+		WaitingText->SetVisibility(ESlateVisibility::Visible);
 	}
 }
 

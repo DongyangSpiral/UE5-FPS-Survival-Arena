@@ -29,7 +29,7 @@ void AMyLobbyGameMode::PostLogin(APlayerController* NewPlayer)
 	if (!HasAuthority() || !NewPlayer || !NewPlayer->PlayerState)
 		return;
 
-	if (NewPlayer->IsLocalPlayerController())
+	if (NewPlayer == GetWorld()->GetFirstPlayerController())
 	{
 		if (UMyGameInstance* GI = Cast<UMyGameInstance>(GetGameInstance()))
 		{

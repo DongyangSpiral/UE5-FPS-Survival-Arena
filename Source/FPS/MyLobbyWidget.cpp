@@ -131,6 +131,36 @@ void UMyLobbyWidget::NativeOnInitialized()
 	WaitingText->SetJustification(ETextJustify::Center);
 	{
 		UVerticalBoxSlot* VS = MainBox->AddChildToVerticalBox(WaitingText);
+		VS->SetPadding(FMargin(0.f, 0.f, 0.f, 40.f));
+		VS->SetHorizontalAlignment(EHorizontalAlignment::HAlign_Center);
+	}
+
+	// Exit button
+	ExitButton = WidgetTree->ConstructWidget<UButton>(UButton::StaticClass(), TEXT("ExitButton"));
+	{
+		UTextBlock* BtnText = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass());
+		BtnText->SetText(FText::FromString(TEXT("Exit to Main Menu")));
+		BtnText->SetFont(FCoreStyle::GetDefaultFontStyle("Bold", 16));
+		BtnText->SetJustification(ETextJustify::Center);
+		BtnText->SetColorAndOpacity(FLinearColor(0.8f, 0.8f, 0.8f));
+		ExitButton->SetContent(BtnText);
+
+		FButtonStyle Style;
+		Style.Normal.TintColor = FSlateColor(FLinearColor(0.3f, 0.15f, 0.15f, 1.f));
+		Style.Hovered.TintColor = FSlateColor(FLinearColor(0.45f, 0.2f, 0.2f, 1.f));
+		Style.Pressed.TintColor = FSlateColor(FLinearColor(0.15f, 0.08f, 0.08f, 1.f));
+		ExitButton->WidgetStyle = Style;
+
+		ExitButton->OnClicked.AddDynamic(this, &UMyLobbyWidget::OnExitLobby);
+	}
+
+	USizeBox* ExitSB = WidgetTree->ConstructWidget<USizeBox>(USizeBox::StaticClass(), TEXT("ExitBtnSize"));
+	ExitSB->SetWidthOverride(200.f);
+	ExitSB->SetHeightOverride(40.f);
+	ExitSB->SetContent(ExitButton);
+	{
+		UVerticalBoxSlot* VS = MainBox->AddChildToVerticalBox(ExitSB);
+		VS->SetPadding(FMargin(0.f, 0.f, 0.f, 0.f));
 		VS->SetHorizontalAlignment(EHorizontalAlignment::HAlign_Center);
 	}
 
@@ -160,6 +190,25 @@ void UMyLobbyWidget::OnStartGame()
 	PC->SetInputMode(FInputModeGameOnly());
 	PC->SetShowMouseCursor(false);
 	GetWorld()->ServerTravel(TEXT("/Game/Game?listen"));
+}
+
+void UMyLobbyWidget::OnExitLobby()
+{
+	APlayerController* PC = GetOwningPlayer();
+	if (!PC)
+		return;
+
+	PC->SetInputMode(FInputModeGameOnly());
+	PC->SetShowMouseCursor(false);
+
+	if (PC->HasAuthority())
+	{
+		GetWorld()->ServerTravel(TEXT("/Game/Lvl_MainMenu"));
+	}
+	else
+	{
+		PC->ClientTravel(TEXT("/Game/Lvl_MainMenu"), ETravelType::TRAVEL_Absolute);
+	}
 }
 
 void UMyLobbyWidget::RefreshPlayerList()
@@ -214,7 +263,7 @@ void UMyLobbyWidget::RefreshPlayerList()
 			HS->SetSize(SZ);
 		}
 
-		// Highlight local player
+			// Highlight local player
 		if (LocalPC && PS == LocalPC->PlayerState)
 		{
 			IndexText->SetColorAndOpacity(FLinearColor(1.f, 0.9f, 0.f));
@@ -222,6 +271,18 @@ void UMyLobbyWidget::RefreshPlayerList()
 		}
 
 		EntryList->AddChildToVerticalBox(Row);
+	}
+
+	// Show/hide start button based on authority
+	if (StartButton)
+	{
+		bool bIsHost = LocalPC && LocalPC->HasAuthority();
+		StartButton->SetVisibility(bIsHost ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+	}
+	if (WaitingText)
+	{
+		bool bIsHost = LocalPC && LocalPC->HasAuthority();
+		WaitingText->SetVisibility(bIsHost ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
 	}
 }
 

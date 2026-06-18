@@ -11,4 +11,5 @@ class FPS_API AMyMenuGameMode : public AGameModeBase
 
 public:
 	virtual void BeginPlay() override;
+	virtual void PostLogin(APlayerController* NewPlayer) override;
 };

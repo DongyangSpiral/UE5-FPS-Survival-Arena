@@ -6,6 +6,8 @@
 
 class UEditableTextBox;
 class UCanvasPanel;
+class UButton;
+class UTextBlock;
 
 UCLASS()
 class FPS_API UMyMainMenuWidget : public UUserWidget
@@ -47,4 +49,16 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<UEditableTextBox> NameInputBox;
+
+	UPROPERTY()
+	TObjectPtr<UButton> CreateBtn;
+
+	UPROPERTY()
+	TObjectPtr<UButton> JoinBtn;
+
+	UPROPERTY()
+	TObjectPtr<UButton> QuitBtn;
+
+	UPROPERTY()
+	TObjectPtr<UTextBlock> WaitingText;
 };

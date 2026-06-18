@@ -21,6 +21,9 @@ private:
 	UFUNCTION()
 	void OnStartGame();
 
+	UFUNCTION()
+	void OnExitLobby();
+
 	void RefreshPlayerList();
 	void UpdateIPDisplay();
 
@@ -32,6 +35,9 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<UButton> StartButton;
+
+	UPROPERTY()
+	TObjectPtr<UButton> ExitButton;
 
 	UPROPERTY()
 	TObjectPtr<UTextBlock> WaitingText;
