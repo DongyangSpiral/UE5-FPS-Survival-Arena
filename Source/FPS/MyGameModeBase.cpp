@@ -1,4 +1,5 @@
 #include "MyGameModeBase.h"
+#include "MyGameInstance.h"
 #include "MyCharacter.h"
 #include "MyPlayerState.h"
 #include "MyGameStateBase.h"
@@ -33,6 +34,18 @@ void AMyGameModeBase::BeginPlay()
 void AMyGameModeBase::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
+
+	if (!HasAuthority() || !NewPlayer || !NewPlayer->PlayerState)
+		return;
+
+	if (NewPlayer->IsLocalPlayerController())
+	{
+		if (UMyGameInstance* GI = Cast<UMyGameInstance>(GetGameInstance()))
+		{
+			if (!GI->PendingPlayerName.IsEmpty())
+				NewPlayer->PlayerState->SetPlayerName(GI->PendingPlayerName);
+		}
+	}
 }
 
 void AMyGameModeBase::RestartPlayer(AController* NewPlayer)

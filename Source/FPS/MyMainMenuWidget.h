@@ -31,6 +31,8 @@ private:
 	UFUNCTION()
 	void OnCancelJoin();
 
+	FString GetSanitizedPlayerName() const;
+
 	void ShowJoinOverlay();
 	void HideJoinOverlay();
 

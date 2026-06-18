@@ -1,4 +1,5 @@
 #include "MyMainMenuWidget.h"
+#include "MyGameInstance.h"
 #include "Blueprint/WidgetTree.h"
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
@@ -283,21 +284,26 @@ void UMyMainMenuWidget::NativeOnInitialized()
 	}
 }
 
+FString UMyMainMenuWidget::GetSanitizedPlayerName() const
+{
+	FString Name = NameInputBox ? NameInputBox->GetText().ToString().TrimStartAndEnd() : FString();
+	if (Name.IsEmpty())
+		Name = TEXT("Player");
+	return Name;
+}
+
 void UMyMainMenuWidget::OnCreateRoom()
 {
 	APlayerController* PC = GetOwningPlayer();
-	if (PC)
-	{
-		FString PlayerName = NameInputBox ? NameInputBox->GetText().ToString().TrimStartAndEnd() : FString();
-		if (PlayerName.IsEmpty())
-			PlayerName = TEXT("Player");
+	if (!PC)
+		return;
 
-		if (APlayerState* PS = PC->GetPlayerState<APlayerState>())
-			PS->SetPlayerName(PlayerName);
+	FString PlayerName = GetSanitizedPlayerName();
+	if (UMyGameInstance* GI = Cast<UMyGameInstance>(GetGameInstance()))
+		GI->PendingPlayerName = PlayerName;
 
-		PC->SetInputMode(FInputModeGameOnly());
-		PC->SetShowMouseCursor(false);
-	}
+	PC->SetInputMode(FInputModeGameOnly());
+	PC->SetShowMouseCursor(false);
 	GetWorld()->ServerTravel(TEXT("/Game/Lvl_Lobby?listen"));
 }
 
@@ -327,18 +333,21 @@ void UMyMainMenuWidget::OnConnect()
 	if (!IP.Contains(TEXT(".")))
 		return;
 
-	FString PlayerName = NameInputBox ? NameInputBox->GetText().ToString().TrimStartAndEnd() : FString();
-	if (PlayerName.IsEmpty())
-		PlayerName = TEXT("Player");
+	FString PlayerName = GetSanitizedPlayerName();
+	if (UMyGameInstance* GI = Cast<UMyGameInstance>(GetGameInstance()))
+		GI->PendingPlayerName = PlayerName;
 
-	IP += TEXT("?Name=") + PlayerName;
+	FString TravelURL = IP;
+	if (!TravelURL.Contains(TEXT(":")))
+		TravelURL += TEXT(":7777");
+	TravelURL += TEXT("?Name=") + PlayerName;
 
 	APlayerController* PC = GetOwningPlayer();
 	if (PC)
 	{
 		PC->SetInputMode(FInputModeGameOnly());
 		PC->SetShowMouseCursor(false);
-		PC->ClientTravel(IP, ETravelType::TRAVEL_Absolute);
+		PC->ClientTravel(TravelURL, ETravelType::TRAVEL_Absolute);
 	}
 }
 
