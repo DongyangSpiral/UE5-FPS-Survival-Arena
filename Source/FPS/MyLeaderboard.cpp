@@ -22,7 +22,7 @@ void UMyLeaderboard::NativeOnInitialized()
 
 	// Outer border (semi-transparent background)
 	UBorder* Bg = WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass(), TEXT("Bg"));
-	Bg->SetContentColorAndOpacity(FLinearColor(0.f, 0.f, 0.f, 0.35f));
+	Bg->SetContentColorAndOpacity(FLinearColor(0.f, 0.f, 0.f, 0.55f));
 
 	// Main vertical layout
 	UVerticalBox* MainBox = WidgetTree->ConstructWidget<UVerticalBox>(UVerticalBox::StaticClass(), TEXT("MainBox"));
@@ -66,13 +66,12 @@ void UMyLeaderboard::NativeOnInitialized()
 
 	Bg->SetContent(MainBox);
 
-	// Anchor right-middle, 10px inset
+	// Anchor top-right, 10px inset
 	UCanvasPanelSlot* BgSlot = Root->AddChildToCanvas(Bg);
-	BgSlot->SetAnchors(FAnchors(1.f, 0.35f, 1.f, 0.35f));
-	BgSlot->SetAlignment(FVector2D(1.f, 0.5f));
-	BgSlot->SetPosition(FVector2D(-10.f, 0.f));
+	BgSlot->SetAnchors(FAnchors(1.f, 0.f, 1.f, 0.f));
+	BgSlot->SetAlignment(FVector2D(1.f, 0.f));
+	BgSlot->SetPosition(FVector2D(-10.f, 60.f));
 	BgSlot->SetAutoSize(true);
-	Bg->SetMinDesiredWidth(300.f);
 }
 
 void UMyLeaderboard::UpdateEntries(const TArray<FLeaderboardEntry>& Entries, int32 TargetScore)
