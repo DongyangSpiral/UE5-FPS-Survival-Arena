@@ -1,6 +1,7 @@
 #include "MyNPC.h"
 #include "FPS.h"
 #include "MyPlayerState.h"
+#include "MyGameStateBase.h"
 #include "AIController.h"
 #include "Variant_Shooter/AI/ShooterAIController.h"
 #include "Components/StateTreeAIComponent.h"
@@ -37,6 +38,8 @@ void AMyNPC::BeginPlay()
 
 	if (HasAuthority())
 	{
+		MyGameState = Cast<AMyGameStateBase>(GetWorld()->GetGameState());
+
 		if (!Weapon)
 		{
 			UE_LOG(LogFPS, Error, TEXT("AMyNPC::BeginPlay - Weapon is NULL after Super::BeginPlay! Check WeaponClass in BP_SurvivalNPC."));
@@ -89,6 +92,18 @@ void AMyNPC::ChaseTick()
 {
 	if (bIsDead)
 		return;
+
+	if (MyGameState && MyGameState->bGameFinished)
+	{
+		SafeStopShooting();
+		if (AAIController* AIC = Cast<AAIController>(GetController()))
+		{
+			AIC->StopMovement();
+			AIC->ClearFocus(EAIFocusPriority::Gameplay);
+		}
+		GetWorld()->GetTimerManager().ClearTimer(ChaseTimerHandle);
+		return;
+	}
 
 	TArray<AActor*> Players;
 	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Player"), Players);

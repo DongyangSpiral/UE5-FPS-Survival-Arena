@@ -33,12 +33,6 @@ void AMyGameModeBase::BeginPlay()
 void AMyGameModeBase::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
-
-	if (HasAuthority())
-	{
-		AlivePlayers.Add(NewPlayer);
-		SyncAliveCount();
-	}
 }
 
 void AMyGameModeBase::RestartPlayer(AController* NewPlayer)

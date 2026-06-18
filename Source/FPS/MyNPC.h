@@ -4,6 +4,8 @@
 #include "Variant_Shooter/AI/ShooterNPC.h"
 #include "MyNPC.generated.h"
 
+class AMyGameStateBase;
+
 UCLASS()
 class FPS_API AMyNPC : public AShooterNPC
 {
@@ -33,6 +35,9 @@ protected:
 	void SafeStartShooting(AActor* ActorToShoot);
 
 	FTimerHandle ChaseTimerHandle;
+
+	UPROPERTY()
+	TObjectPtr<AMyGameStateBase> MyGameState;
 
 	UPROPERTY(ReplicatedUsing = OnRep_CurrentHP)
 	float ReplicatedCurrentHP = 100.0f;
