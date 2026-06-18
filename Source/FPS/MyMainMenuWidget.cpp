@@ -17,6 +17,7 @@
 #include "Styling/SlateTypes.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
+#include "Engine/Texture2D.h"
 #include "Kismet/GameplayStatics.h"
 
 void UMyMainMenuWidget::NativeOnInitialized()
@@ -28,7 +29,22 @@ void UMyMainMenuWidget::NativeOnInitialized()
 
 	// Background
 	UBorder* Bg = WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass(), TEXT("Background"));
-	Bg->SetBrushColor(FLinearColor(0.05f, 0.05f, 0.1f, 1.f));
+	{
+		UTexture2D* BGTex = Cast<UTexture2D>(StaticLoadObject(UTexture2D::StaticClass(), nullptr,
+			TEXT("/Game/Fab/StartPanle2.StartPanle2")));
+		if (BGTex)
+		{
+			FSlateBrush NewBrush;
+			NewBrush.SetResourceObject(BGTex);
+			NewBrush.ImageSize = FVector2D(BGTex->GetSurfaceWidth(), BGTex->GetSurfaceHeight());
+			NewBrush.DrawAs = ESlateBrushDrawType::Image;
+			Bg->SetBrush(NewBrush);
+		}
+		else
+		{
+			Bg->SetBrushColor(FLinearColor(0.05f, 0.05f, 0.1f, 1.f));
+		}
+	}
 	{
 		UCanvasPanelSlot* CS = RootCanvas->AddChildToCanvas(Bg);
 		CS->SetAnchors(FAnchors(0.f, 0.f, 1.f, 1.f));
@@ -39,22 +55,10 @@ void UMyMainMenuWidget::NativeOnInitialized()
 	UVerticalBox* MainBox = WidgetTree->ConstructWidget<UVerticalBox>(UVerticalBox::StaticClass(), TEXT("MainBox"));
 	{
 		UCanvasPanelSlot* CS = RootCanvas->AddChildToCanvas(MainBox);
-		CS->SetAnchors(FAnchors(0.5f, 0.45f, 0.5f, 0.45f));
+		CS->SetAnchors(FAnchors(0.5f, 0.55f, 0.5f, 0.55f));
 		CS->SetAlignment(FVector2D(0.5f, 0.5f));
 		CS->SetPosition(FVector2D(0.f, 0.f));
 		CS->SetAutoSize(true);
-	}
-
-	// Title
-	UTextBlock* Title = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("Title"));
-	Title->SetText(FText::FromString(TEXT("SURVIVAL ARENA")));
-	Title->SetFont(FCoreStyle::GetDefaultFontStyle("Bold", 36));
-	Title->SetColorAndOpacity(FLinearColor(1.f, 1.f, 1.f, 0.95f));
-	Title->SetJustification(ETextJustify::Center);
-	{
-		UVerticalBoxSlot* VS = MainBox->AddChildToVerticalBox(Title);
-		VS->SetPadding(FMargin(0.f, 0.f, 0.f, 40.f));
-		VS->SetHorizontalAlignment(EHorizontalAlignment::HAlign_Center);
 	}
 
 	// Player name input
@@ -65,7 +69,7 @@ void UMyMainMenuWidget::NativeOnInitialized()
 	NameLabel->SetJustification(ETextJustify::Center);
 	{
 		UVerticalBoxSlot* VS = MainBox->AddChildToVerticalBox(NameLabel);
-		VS->SetPadding(FMargin(0.f, 0.f, 0.f, 4.f));
+		VS->SetPadding(FMargin(0.f, 20.f, 0.f, 4.f));
 		VS->SetHorizontalAlignment(EHorizontalAlignment::HAlign_Center);
 	}
 
