@@ -8,6 +8,7 @@ class UEditableTextBox;
 class UCanvasPanel;
 class UButton;
 class UTextBlock;
+class UTexture2D;
 
 UCLASS()
 class FPS_API UMyMainMenuWidget : public UUserWidget
@@ -37,6 +38,9 @@ private:
 
 	void ShowJoinOverlay();
 	void HideJoinOverlay();
+
+	UPROPERTY(EditDefaultsOnly, Category = "Background")
+	TObjectPtr<UTexture2D> BackgroundTexture;
 
 	UPROPERTY()
 	TObjectPtr<UCanvasPanel> RootCanvas;

@@ -29,28 +29,21 @@ void UMyMainMenuWidget::NativeOnInitialized()
 
 	// Background
 	UBorder* Bg = WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass(), TEXT("Background"));
+	Bg->SetBrushColor(FLinearColor(0.06f, 0.06f, 0.1f, 1.f));
+	if (BackgroundTexture)
 	{
-		UTexture2D* BGTex = Cast<UTexture2D>(StaticLoadObject(UTexture2D::StaticClass(), nullptr,
-			TEXT("/Game/Fab/StartPanle2.StartPanle2")));
-		if (BGTex)
-		{
-			FSlateBrush NewBrush;
-			NewBrush.SetResourceObject(BGTex);
-			NewBrush.ImageSize = FVector2D(BGTex->GetSurfaceWidth(), BGTex->GetSurfaceHeight());
-			NewBrush.DrawAs = ESlateBrushDrawType::Image;
-			Bg->SetBrush(NewBrush);
-		}
-		else
-		{
-			Bg->SetBrushColor(FLinearColor(0.05f, 0.05f, 0.1f, 1.f));
-		}
+		FSlateBrush NewBrush;
+		NewBrush.SetResourceObject(BackgroundTexture);
+		NewBrush.ImageSize = FVector2D(BackgroundTexture->GetSurfaceWidth(), BackgroundTexture->GetSurfaceHeight());
+		NewBrush.DrawAs = ESlateBrushDrawType::Image;
+		Bg->SetBrush(NewBrush);
+		Bg->SetBrushColor(FLinearColor(0.8f, 0.8f, 1.f, 0.15f));
 	}
 	{
 		UCanvasPanelSlot* CS = RootCanvas->AddChildToCanvas(Bg);
 		CS->SetAnchors(FAnchors(0.f, 0.f, 1.f, 1.f));
 		CS->SetOffsets(FMargin(0.f));
 	}
-	Bg->SetBrushColor(FLinearColor(1.f, 1.f, 1.f, 0.8f));
 
 	// Title
 	UTextBlock* Title = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("Title"));
