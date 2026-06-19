@@ -39,3 +39,10 @@ Thumbs.db
 
 # Marketplace Assets
 Content/Fab/
+
+# Packaged Builds
+Packaged/
+StagedBuilds/
+*.pak
+*.ucas
+*.utoc
